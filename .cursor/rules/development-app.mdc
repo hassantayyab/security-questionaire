@@ -1,5 +1,5 @@
 ---
-alwaysApply: false
+alwaysApply: true
 ---
 
 ALWAYS start response with `🎨 FRONTEND RULES APPLIED`.
