@@ -1,0 +1,14 @@
+# Summit Security Questionnaire Frontend Configuration
+# Copy this to .env.local and fill in your values
+
+# Backend API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
+
+# Supabase Configuration (Optional - for direct frontend access)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Application Configuration
+NEXT_PUBLIC_APP_NAME="Summit Security Questionnaire"
+NEXT_PUBLIC_MAX_FILE_SIZE=10485760
