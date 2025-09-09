@@ -7,6 +7,7 @@ from typing import Optional
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -30,7 +31,7 @@ class AIService:
         self.client = anthropic.Anthropic(api_key=self.api_key)
         
         # Claude model configuration
-        self.model = "claude-3-sonnet-20240229"
+        self.model = "claude-sonnet-4-20250514"  # Updated to latest Claude 4 Sonnet
         self.max_tokens = 1000
         self.temperature = 0.3  # Lower temperature for more consistent, factual responses
     
@@ -50,11 +51,15 @@ class AIService:
         """
         try:
             logger.info(f"Generating answer for question: {question[:100]}...")
+            logger.info(f"Using model: {self.model}")
+            logger.info(f"Policy context length: {len(policy_context)} characters")
             
             # Create prompt for accurate answer generation
             prompt = self._create_prompt(question, policy_context)
+            logger.info(f"Prompt created, length: {len(prompt)} characters")
             
             # Call Claude API
+            logger.info("Calling Claude API...")
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=self.max_tokens,
@@ -70,15 +75,50 @@ class AIService:
             answer = response.content[0].text.strip()
             
             logger.info(f"Successfully generated answer ({len(answer)} characters)")
+            logger.info(f"Answer preview: {answer[:100]}...")
             
             return answer
             
         except anthropic.APIError as e:
             logger.error(f"Anthropic API error: {str(e)}")
+            logger.error(f"API error type: {type(e).__name__}")
+            logger.error(f"API error details: {e}")
             raise Exception(f"AI service error: {str(e)}")
         except Exception as e:
             logger.error(f"Unexpected error in AI generation: {str(e)}")
+            logger.error(f"Error type: {type(e).__name__}")
             raise Exception(f"Error generating answer: {str(e)}")
+    
+    def _load_ai_instructions(self) -> str:
+        """
+        Load AI instructions from markdown file
+        
+        Returns:
+            str: AI instructions content
+            
+        Raises:
+            Exception: If instructions file cannot be loaded
+        """
+        try:
+            # Get the directory where this file is located
+            current_dir = Path(__file__).parent
+            # Navigate to the prompts directory
+            prompts_dir = current_dir / "prompts"
+            instructions_file = prompts_dir / "ai_instructions.md"
+            
+            if not instructions_file.exists():
+                raise FileNotFoundError(f"AI instructions file not found at {instructions_file}")
+            
+            instructions = instructions_file.read_text(encoding='utf-8')
+            if not instructions.strip():
+                raise ValueError("AI instructions file is empty")
+                
+            return instructions
+                
+        except Exception as e:
+            logger.error(f"Critical error loading AI instructions: {str(e)}")
+            raise Exception(f"Cannot proceed without AI instructions: {str(e)}")
+    
     
     def _create_prompt(self, question: str, policy_context: str) -> str:
         """
@@ -92,17 +132,10 @@ class AIService:
             str: Formatted prompt
         """
         
-        prompt = f"""You are a cybersecurity compliance expert helping to complete a security questionnaire. 
-
-Your task is to analyze the provided policy documents and generate accurate, concise answers to security questionnaire questions.
-
-GUIDELINES:
-1. Answer in second person perspective (use "you", "your", "we", "our")
-2. Base answers strictly on the provided policy documents
-3. If information is not available in the policies, clearly state that
-4. Keep answers concise but complete (2-4 sentences typically)
-5. Focus on factual information, not opinions
-6. Use professional, compliance-oriented language
+        # Load instructions from markdown file
+        instructions = self._load_ai_instructions()
+        
+        prompt = f"""{instructions}
 
 POLICY DOCUMENTS:
 {policy_context}
@@ -110,7 +143,7 @@ POLICY DOCUMENTS:
 QUESTION TO ANSWER:
 {question}
 
-Please provide a clear, accurate answer based on the policy documents above. If the specific information needed to answer this question is not found in the policies, state that clearly and suggest what information would be needed."""
+ANSWER:"""
 
         return prompt
     

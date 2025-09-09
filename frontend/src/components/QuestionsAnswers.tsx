@@ -4,7 +4,6 @@ import FileUpload from '@/components/FileUpload';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import {
   Table,
@@ -14,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import { appConfig } from '@/config/app';
 import { api, ApiError } from '@/lib/api';
 import { GenerateAnswersResponse, Question, Questionnaire, UploadResponse } from '@/types';
@@ -25,6 +25,7 @@ import {
   HelpCircle,
   Loader2,
   Save,
+  Trash2,
   Upload,
   X,
   XCircle,
@@ -191,6 +192,42 @@ export default function QuestionsAnswers() {
     setEditingAnswer('');
   };
 
+  const handleDeleteQuestionnaire = async (questionnaire: Questionnaire) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${questionnaire.name}" and all its questions? This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await api.deleteQuestionnaire(questionnaire.id);
+
+      if (response.success) {
+        toast.success(response.message);
+
+        // Remove questionnaire from state
+        setQuestionnaires((prev) => prev.filter((q) => q.id !== questionnaire.id));
+
+        // If this was the selected questionnaire, clear selection
+        if (selectedQuestionnaire?.id === questionnaire.id) {
+          setSelectedQuestionnaire(null);
+          setQuestions([]);
+        }
+      } else {
+        toast.error('Failed to delete questionnaire');
+      }
+    } catch (error) {
+      console.error('Delete questionnaire error:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to delete questionnaire. Please try again.');
+      }
+    }
+  };
+
   const toggleApproval = async (questionId: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'approved' ? 'unapproved' : 'approved';
@@ -343,18 +380,35 @@ export default function QuestionsAnswers() {
               {questionnaires.map((questionnaire) => (
                 <Card
                   key={questionnaire.id}
-                  className={`cursor-pointer transition-colors ${
+                  className={`transition-colors ${
                     selectedQuestionnaire?.id === questionnaire.id
                       ? 'border-primary bg-primary/5'
                       : 'hover:border-primary/50'
                   }`}
-                  onClick={() => setSelectedQuestionnaire(questionnaire)}
                 >
                   <CardContent className='p-4'>
                     <div className='space-y-2'>
-                      <div className='font-medium'>{questionnaire.name}</div>
-                      <div className='text-sm text-muted-foreground'>
-                        {formatDate(questionnaire.upload_date)}
+                      <div className='flex items-center justify-between'>
+                        <div
+                          className='flex-1 cursor-pointer'
+                          onClick={() => setSelectedQuestionnaire(questionnaire)}
+                        >
+                          <div className='font-medium'>{questionnaire.name}</div>
+                          <div className='text-sm text-muted-foreground'>
+                            {formatDate(questionnaire.upload_date)}
+                          </div>
+                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='text-destructive hover:text-destructive'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteQuestionnaire(questionnaire);
+                          }}
+                        >
+                          <Trash2 className='w-4 h-4' />
+                        </Button>
                       </div>
                       {questionnaire.question_count && (
                         <Badge variant='secondary'>{questionnaire.question_count} questions</Badge>
@@ -456,124 +510,133 @@ export default function QuestionsAnswers() {
                 </div>
 
                 {/* Questions Table */}
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className='w-12'>
-                        <input
-                          type='checkbox'
-                          className='rounded'
-                          checked={
-                            selectedQuestions.size === questions.length && questions.length > 0
-                          }
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedQuestions(new Set(questions.map((q) => q.id)));
-                            } else {
-                              setSelectedQuestions(new Set());
-                            }
-                          }}
-                        />
-                      </TableHead>
-                      <TableHead>Question</TableHead>
-                      <TableHead>Answer</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className='text-right'>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {questions.map((question) => (
-                      <TableRow key={question.id}>
-                        <TableCell>
+                <div className='overflow-x-auto border rounded-lg'>
+                  <Table className='min-w-full'>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className='w-12 min-w-12'>
                           <input
                             type='checkbox'
                             className='rounded'
-                            checked={selectedQuestions.has(question.id)}
-                            onChange={() => toggleQuestionSelection(question.id)}
+                            checked={
+                              selectedQuestions.size === questions.length && questions.length > 0
+                            }
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedQuestions(new Set(questions.map((q) => q.id)));
+                              } else {
+                                setSelectedQuestions(new Set());
+                              }
+                            }}
                           />
-                        </TableCell>
-                        <TableCell className='max-w-md'>
-                          <div className='text-sm'>{question.question_text}</div>
-                        </TableCell>
-                        <TableCell className='max-w-lg'>
-                          {editingQuestionId === question.id ? (
-                            <div className='space-y-2'>
-                              <Input
-                                value={editingAnswer}
-                                onChange={(e) => setEditingAnswer(e.target.value)}
-                                placeholder='Enter answer...'
-                                className='text-sm'
-                              />
-                              <div className='flex gap-2'>
-                                <Button
-                                  size='sm'
-                                  onClick={() => saveAnswer(question.id)}
-                                  className='gap-1'
-                                >
-                                  <Save className='w-3 h-3' />
-                                  Save
-                                </Button>
-                                <Button
-                                  size='sm'
-                                  variant='outline'
-                                  onClick={cancelEditing}
-                                  className='gap-1'
-                                >
-                                  <X className='w-3 h-3' />
-                                  Cancel
-                                </Button>
+                        </TableHead>
+                        <TableHead className='w-1/3 min-w-[250px]'>Question</TableHead>
+                        <TableHead className='w-2/5 min-w-[300px]'>Answer</TableHead>
+                        <TableHead className='w-20 min-w-[100px]'>Status</TableHead>
+                        <TableHead className='w-24 min-w-[120px] text-right'>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {questions.map((question) => (
+                        <TableRow key={question.id}>
+                          <TableCell className='w-12 min-w-12'>
+                            <input
+                              type='checkbox'
+                              className='rounded'
+                              checked={selectedQuestions.has(question.id)}
+                              onChange={() => toggleQuestionSelection(question.id)}
+                            />
+                          </TableCell>
+                          <TableCell className='w-1/3 min-w-[250px]'>
+                            <div className='text-sm leading-relaxed break-words pr-4'>
+                              {question.question_text}
+                            </div>
+                          </TableCell>
+                          <TableCell className='w-2/5 min-w-[300px]'>
+                            {editingQuestionId === question.id ? (
+                              <div className='space-y-3 py-2'>
+                                <Textarea
+                                  value={editingAnswer}
+                                  onChange={(e) => setEditingAnswer(e.target.value)}
+                                  placeholder='Enter answer...'
+                                  className='text-sm resize-none min-h-[80px] w-full'
+                                  rows={3}
+                                />
+                                <div className='flex gap-2'>
+                                  <Button
+                                    size='sm'
+                                    onClick={() => saveAnswer(question.id)}
+                                    className='gap-1'
+                                  >
+                                    <Save className='w-3 h-3' />
+                                    Save
+                                  </Button>
+                                  <Button
+                                    size='sm'
+                                    variant='outline'
+                                    onClick={cancelEditing}
+                                    className='gap-1'
+                                  >
+                                    <X className='w-3 h-3' />
+                                    Cancel
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          ) : (
-                            <div className='text-sm'>
-                              {question.answer || (
-                                <span className='text-muted-foreground italic'>
-                                  No answer generated yet
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={question.status === 'approved' ? 'default' : 'secondary'}
-                            className='gap-1'
-                          >
-                            {question.status === 'approved' ? (
-                              <CheckCircle className='w-3 h-3' />
                             ) : (
-                              <XCircle className='w-3 h-3' />
+                              <div className='text-sm leading-relaxed break-words pr-4 py-2'>
+                                {question.answer ? (
+                                  <div className='whitespace-pre-wrap'>{question.answer}</div>
+                                ) : (
+                                  <span className='text-muted-foreground italic'>
+                                    No answer generated yet
+                                  </span>
+                                )}
+                              </div>
                             )}
-                            {question.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className='text-right'>
-                          <div className='flex items-center justify-end gap-1'>
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              onClick={() => startEditing(question)}
-                              disabled={editingQuestionId === question.id}
-                            >
-                              <Edit className='w-4 h-4' />
-                            </Button>
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              onClick={() => toggleApproval(question.id, question.status)}
+                          </TableCell>
+                          <TableCell className='w-20 min-w-[100px]'>
+                            <Badge
+                              variant={question.status === 'approved' ? 'default' : 'secondary'}
+                              className='gap-1'
                             >
                               {question.status === 'approved' ? (
-                                <XCircle className='w-4 h-4' />
+                                <CheckCircle className='w-3 h-3' />
                               ) : (
-                                <CheckCircle className='w-4 h-4' />
+                                <XCircle className='w-3 h-3' />
                               )}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                              <span className='hidden lg:inline'>{question.status}</span>
+                            </Badge>
+                          </TableCell>
+                          <TableCell className='w-24 min-w-[120px] text-right'>
+                            <div className='flex items-center justify-end gap-1'>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => startEditing(question)}
+                                disabled={editingQuestionId === question.id}
+                                title='Edit answer'
+                              >
+                                <Edit className='w-4 h-4' />
+                              </Button>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => toggleApproval(question.id, question.status)}
+                                title={question.status === 'approved' ? 'Unapprove' : 'Approve'}
+                              >
+                                {question.status === 'approved' ? (
+                                  <XCircle className='w-4 h-4' />
+                                ) : (
+                                  <CheckCircle className='w-4 h-4' />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             )}
           </CardContent>

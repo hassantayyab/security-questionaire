@@ -13,6 +13,9 @@ from app.config.settings import get_settings
 # Load environment variables
 load_dotenv()
 
+# Get settings
+settings = get_settings()
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Summit Security Questionnaire API",
@@ -23,7 +26,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://your-frontend-domain.com"],  # Update with your frontend URL
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

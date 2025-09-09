@@ -251,6 +251,49 @@ class DatabaseService:
             logger.error(f"Database connection test failed: {str(e)}")
             return False
     
+    async def get_policy_by_id(self, policy_id: str) -> Optional[Dict[str, Any]]:
+        """Get a single policy by ID"""
+        try:
+            response = self.client.table("policies").select("*").eq("id", policy_id).execute()
+            
+            if response.data and len(response.data) > 0:
+                return response.data[0]
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error getting policy by ID: {str(e)}")
+            raise Exception(f"Database error: {str(e)}")
+
+    async def delete_policy(self, policy_id: str) -> bool:
+        """Delete a policy by ID"""
+        try:
+            response = self.client.table("policies").delete().eq("id", policy_id).execute()
+            
+            # Check if any rows were affected
+            return len(response.data) > 0
+                
+        except Exception as e:
+            logger.error(f"Error deleting policy: {str(e)}")
+            raise Exception(f"Database error: {str(e)}")
+
+    async def delete_questionnaire(self, questionnaire_id: str) -> bool:
+        """Delete a questionnaire and all its questions (CASCADE)"""
+        try:
+            # First delete all questions for this questionnaire
+            questions_response = self.client.table("questions").delete().eq("questionnaire_id", questionnaire_id).execute()
+            logger.info(f"Deleted {len(questions_response.data)} questions for questionnaire {questionnaire_id}")
+            
+            # Then delete the questionnaire
+            questionnaire_response = self.client.table("questionnaires").delete().eq("id", questionnaire_id).execute()
+            
+            # Check if questionnaire was deleted
+            return len(questionnaire_response.data) > 0
+                
+        except Exception as e:
+            logger.error(f"Error deleting questionnaire: {str(e)}")
+            raise Exception(f"Database error: {str(e)}")
+
     async def get_statistics(self) -> Dict[str, Any]:
         """Get database statistics"""
         try:

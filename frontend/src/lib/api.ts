@@ -99,9 +99,26 @@ class ApiClient {
     return this.uploadFile<any>('/upload/excel', file);
   }
 
+  // Policies
+  async getPolicies() {
+    return this.request<any>('/questionnaires/policies');
+  }
+
+  async deletePolicy(policyId: string) {
+    return this.request<any>(`/questionnaires/policies/${policyId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Questionnaires
   async getQuestionnaires() {
     return this.request<any>('/questionnaires/');
+  }
+
+  async deleteQuestionnaire(questionnaireId: string) {
+    return this.request<any>(`/questionnaires/${questionnaireId}`, {
+      method: 'DELETE',
+    });
   }
 
   async getQuestions(questionnaireId: string) {

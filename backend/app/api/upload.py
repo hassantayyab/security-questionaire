@@ -49,7 +49,10 @@ async def upload_pdf(
         extracted_text = pdf_processor.extract_text_from_bytes(file_content)
         
         # Store in database
-        db_service = DatabaseService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
         policy_data = {
             "name": file.filename,
             "filename": file.filename,
@@ -103,7 +106,10 @@ async def upload_excel(
         questions = excel_processor.extract_questions_from_bytes(file_content)
         
         # Store in database
-        db_service = DatabaseService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
         questionnaire_data = {
             "name": file.filename,
             "filename": file.filename,

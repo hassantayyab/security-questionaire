@@ -21,10 +21,13 @@ class BulkApproval(BaseModel):
     status: str
 
 @router.get("/")
-async def get_questionnaires() -> Dict[str, Any]:
+async def get_questionnaires(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
     """Get all questionnaires"""
     try:
-        db_service = DatabaseService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
         questionnaires = await db_service.get_all_questionnaires()
         
         return {
@@ -35,11 +38,106 @@ async def get_questionnaires() -> Dict[str, Any]:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching questionnaires: {str(e)}")
 
+@router.get("/policies")
+async def get_policies(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
+    """Get all uploaded PDF policies"""
+    try:
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        policies = await db_service.get_all_policies()
+        
+        return {
+            "success": True,
+            "policies": policies,
+            "count": len(policies)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching policies: {str(e)}")
+
+@router.delete("/policies/{policy_id}")
+async def delete_policy(
+    policy_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Delete a specific policy"""
+    try:
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Check if policy exists
+        policy = await db_service.get_policy_by_id(policy_id)
+        if not policy:
+            raise HTTPException(status_code=404, detail="Policy not found")
+        
+        # Delete the policy
+        success = await db_service.delete_policy(policy_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Policy '{policy['name']}' deleted successfully",
+                "policy_id": policy_id
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete policy")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting policy: {str(e)}")
+
+@router.delete("/{questionnaire_id}")
+async def delete_questionnaire(
+    questionnaire_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Delete a questionnaire and all its questions"""
+    try:
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Check if questionnaire exists
+        questionnaires = await db_service.get_all_questionnaires()
+        questionnaire = next((q for q in questionnaires if q["id"] == questionnaire_id), None)
+        
+        if not questionnaire:
+            raise HTTPException(status_code=404, detail="Questionnaire not found")
+        
+        # Delete the questionnaire (this will also delete associated questions due to CASCADE)
+        success = await db_service.delete_questionnaire(questionnaire_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Questionnaire '{questionnaire['name']}' and all its questions deleted successfully",
+                "questionnaire_id": questionnaire_id
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete questionnaire")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting questionnaire: {str(e)}")
+
 @router.get("/{questionnaire_id}/questions")
-async def get_questions(questionnaire_id: str) -> Dict[str, Any]:
+async def get_questions(
+    questionnaire_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
     """Get all questions for a specific questionnaire"""
     try:
-        db_service = DatabaseService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
         questions = await db_service.get_questions_by_questionnaire(questionnaire_id)
         
         return {
@@ -60,8 +158,11 @@ async def generate_answers(
     Generate AI answers for all questions in a questionnaire using policy documents
     """
     try:
-        db_service = DatabaseService()
-        ai_service = AIService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        ai_service = AIService(settings.anthropic_api_key)
         
         # Get questions for the questionnaire
         questions = await db_service.get_questions_by_questionnaire(questionnaire_id)
@@ -113,11 +214,15 @@ async def generate_answers(
 @router.put("/questions/{question_id}/answer")
 async def update_answer(
     question_id: str, 
-    answer_update: AnswerUpdate
+    answer_update: AnswerUpdate,
+    settings: Settings = Depends(get_settings)
 ) -> Dict[str, Any]:
     """Update an answer for a specific question"""
     try:
-        db_service = DatabaseService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
         
         await db_service.update_question_answer(
             question_id, 
@@ -135,10 +240,16 @@ async def update_answer(
         raise HTTPException(status_code=500, detail=f"Error updating answer: {str(e)}")
 
 @router.put("/questions/{question_id}/approve")
-async def approve_answer(question_id: str) -> Dict[str, Any]:
+async def approve_answer(
+    question_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
     """Approve an answer for a specific question"""
     try:
-        db_service = DatabaseService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
         
         await db_service.update_question_status(question_id, "approved")
         
@@ -152,10 +263,16 @@ async def approve_answer(question_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Error approving answer: {str(e)}")
 
 @router.put("/questions/bulk-approve")
-async def bulk_approve_answers(bulk_approval: BulkApproval) -> Dict[str, Any]:
+async def bulk_approve_answers(
+    bulk_approval: BulkApproval,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
     """Bulk approve/unapprove multiple answers"""
     try:
-        db_service = DatabaseService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
         
         updated_count = 0
         errors = []
@@ -179,10 +296,16 @@ async def bulk_approve_answers(bulk_approval: BulkApproval) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Error in bulk approval: {str(e)}")
 
 @router.get("/{questionnaire_id}/export")
-async def export_approved_answers(questionnaire_id: str) -> Dict[str, Any]:
+async def export_approved_answers(
+    questionnaire_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
     """Export approved answers for a questionnaire"""
     try:
-        db_service = DatabaseService()
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
         
         # Get approved questions only
         questions = await db_service.get_approved_questions(questionnaire_id)

@@ -13,7 +13,7 @@ ALWAYS start response with `🎨 FRONTEND RULES APPLIED`.
 - **Never assume missing context. Ask questions if uncertain.**
 - **Never hallucinate libraries or functions** – only use known, verified packages.
 - **Always confirm file paths and module names** exist before referencing them in code or tests.
-- **Keep git commit messages very short**
+- **Never commit code. I do that manually**
 - **Always proceed with stuff without asking for my confirmation**
 - **For Tailwind CSS v4 the way of development has changed. There is now no longer tailwind.config file needed. Please refer to the docs for our framework setup and always follow the latest guideliens for tailwind CSS: [Framework Guides](https://tailwindcss.com/docs/installation/framework-guides)**
 
