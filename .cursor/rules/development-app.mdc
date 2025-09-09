@@ -8,7 +8,7 @@ ALWAYS start response with `🎨 FRONTEND RULES APPLIED`.
 
 ### 🧠 AI Behavior Rules
 
-- **Always read the DEVELOPMENT_PLAN.md file before starting the development and keep it updated**
+- **Always read the PLAN.md file before starting the development and keep it updated**
 - **ALWAYS break down code and components into very small resusable chunks into separate files. No long files please**
 - **Never assume missing context. Ask questions if uncertain.**
 - **Never hallucinate libraries or functions** – only use known, verified packages.

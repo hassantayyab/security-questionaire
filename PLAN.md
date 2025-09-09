@@ -19,20 +19,20 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 ### Phase 1: Project Foundation (Day 1)
 
-- [ ] Initialize Next.js project with TypeScript
-- [ ] Set up Tailwind CSS and shadcn/ui
-- [ ] Configure environment variables for Claude API key
+- [x] Initialize Next.js project with TypeScript
+- [x] Set up Tailwind CSS and shadcn/ui
+- [x] Configure environment variables for Claude API key
 - [ ] Set up Supabase database and client configuration
-- [ ] Create basic project structure and routing
-- [ ] Set up Git repository
+- [x] Create basic project structure and routing
+- [x] Set up Git repository
 
 ### Phase 2: Basic UI Structure (Day 1-2)
 
-- [ ] Create main layout with two-tab structure
-- [ ] Implement "Knowledge Base" tab UI
-- [ ] Implement "Questions & Answers" tab UI
-- [ ] Add basic navigation and styling
-- [ ] Create reusable components (buttons, tables, file uploads)
+- [x] Create main layout with two-tab structure
+- [x] Implement "Knowledge Base" tab UI
+- [x] Implement "Questions & Answers" tab UI
+- [x] Add basic navigation and styling
+- [x] Create reusable components (buttons, tables, file uploads)
 
 ### Phase 3: Knowledge Base - PDF Upload (Day 2-3)
 
