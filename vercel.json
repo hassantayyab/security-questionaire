@@ -3,7 +3,6 @@
   "outputDirectory": "frontend/.next",
   "installCommand": "cd frontend && npm ci",
   "framework": "nextjs",
-  "nodeVersion": "20.x",
   "functions": {
     "frontend/src/app/**": {
       "runtime": "nodejs20.x"
