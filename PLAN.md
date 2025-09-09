@@ -30,12 +30,12 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 **Backend Setup:**
 
-- [ ] Initialize Python FastAPI project
-- [ ] Set up virtual environment and dependencies (PyPDF2, pandas, openpyxl, python-multipart)
-- [ ] Configure environment variables for Claude API key and Supabase
-- [ ] Set up CORS for frontend communication
-- [ ] Create basic API structure and endpoints
-- [ ] Set up Git repository
+- [x] Initialize Python FastAPI project
+- [x] Set up virtual environment and dependencies (PyPDF2, pandas, openpyxl, python-multipart)
+- [x] Configure environment variables for Claude API key and Supabase
+- [x] Set up CORS for frontend communication
+- [x] Create basic API structure and endpoints
+- [x] Set up Git repository
 
 ### Phase 2: Basic UI Structure (Day 1-2)
 
@@ -56,26 +56,26 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 **Backend:**
 
-- [ ] Create FastAPI endpoint for PDF upload (/upload/pdf)
-- [ ] Implement UploadFile handling with multipart/form-data
-- [ ] Set up file validation (PDF type, size limits)
+- [x] Create FastAPI endpoint for PDF upload (/upload/pdf)
+- [x] Implement UploadFile handling with multipart/form-data
+- [x] Set up file validation (PDF type, size limits)
 - [ ] Create database schema for policies in Supabase
-- [ ] Store policy metadata in database
+- [x] Store policy metadata in database
 
 ### Phase 4: PDF Text Extraction (Day 3-4)
 
 **Backend PDF Processing with PyPDF2:**
 
-- [ ] Install and configure PyPDF2 library
-- [ ] Create PDF text extraction service using BytesIO for memory processing
-- [ ] Implement the following workflow:
-  - [ ] Read uploaded PDF into BytesIO object
-  - [ ] Use PyPDF2.PdfReader to process the PDF from memory
-  - [ ] Loop through all pages to extract text
-  - [ ] Concatenate all page text into a single string
-- [ ] Store extracted text content in database
-- [ ] Handle PDF extraction errors gracefully
-- [ ] Return extraction status and text content to frontend
+- [x] Install and configure PyPDF2 library
+- [x] Create PDF text extraction service using BytesIO for memory processing
+- [x] Implement the following workflow:
+  - [x] Read uploaded PDF into BytesIO object
+  - [x] Use PyPDF2.PdfReader to process the PDF from memory
+  - [x] Loop through all pages to extract text
+  - [x] Concatenate all page text into a single string
+- [x] Store extracted text content in database
+- [x] Handle PDF extraction errors gracefully
+- [x] Return extraction status and text content to frontend
 
 **Frontend:**
 
@@ -94,24 +94,24 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 **Backend:**
 
-- [ ] Install and configure pandas and openpyxl libraries
-- [ ] Create FastAPI endpoint for Excel upload (/upload/excel)
-- [ ] Parse Excel files using pandas to extract questions
+- [x] Install and configure openpyxl libraries
+- [x] Create FastAPI endpoint for Excel upload (/upload/excel)
+- [x] Parse Excel files using openpyxl to extract questions
 - [ ] Create database schema for questions and answers
-- [ ] Store questions in database with questionnaire reference
-- [ ] Handle Excel parsing errors gracefully
+- [x] Store questions in database with questionnaire reference
+- [x] Handle Excel parsing errors gracefully
 
 ### Phase 6: AI Answer Generation (Day 5-6)
 
 **Backend:**
 
-- [ ] Set up Claude API integration in Python
-- [ ] Create AI service for answer generation
-- [ ] Implement prompt engineering for accurate answers
-- [ ] Create endpoint for generating answers (/generate-answers)
-- [ ] Generate answers using policy content and questions
-- [ ] Store generated answers with "Unapproved" status
-- [ ] Add retry mechanism for failed AI calls
+- [x] Set up Claude API integration in Python
+- [x] Create AI service for answer generation
+- [x] Implement prompt engineering for accurate answers
+- [x] Create endpoint for generating answers (/generate-answers)
+- [x] Generate answers using policy content and questions
+- [x] Store generated answers with "Unapproved" status
+- [x] Add retry mechanism for failed AI calls
 
 **Frontend:**
 
@@ -121,23 +121,30 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 ### Phase 7: Answer Review & Editing (Day 6-7)
 
+**Frontend:**
 - [ ] Make answer column editable in table
 - [ ] Implement inline editing functionality
 - [ ] Add save/cancel editing actions
-- [ ] Create approve/unapprove functionality
-- [ ] Update answer status in database
+- [ ] Create approve/unapprove functionality UI
 - [ ] Add bulk approval options
+
+**Backend:**
+- [x] Create endpoints for answer updates (/answers/{id})
+- [x] Create endpoints for status changes (/answers/{id}/approve)
+- [x] Implement bulk operations endpoint
+- [x] Update answer status in database
+- [x] Add validation for answer updates
 
 ### Phase 8: Export Functionality (Day 7-8)
 
 **Backend:**
 
-- [ ] Create export service for approved answers
-- [ ] Implement Excel export functionality using pandas
+- [x] Create export service for approved answers
+- [x] Implement Excel export functionality using openpyxl
 - [ ] Add PDF export option
-- [ ] Create export endpoints (/export/excel, /export/pdf)
-- [ ] Filter only approved answers for export
-- [ ] Handle export errors gracefully
+- [x] Create export endpoints (/export/excel, /export/pdf)
+- [x] Filter only approved answers for export
+- [x] Handle export errors gracefully
 
 **Frontend:**
 
@@ -166,17 +173,20 @@ Building a security questionnaire application similar to Vanta that automaticall
 ### Phase 11: Deployment & Documentation (Day 9)
 
 **Frontend Deployment:**
+
 - [ ] Set up production environment variables for frontend
 - [ ] Deploy Next.js app to Vercel
 - [ ] Configure API base URLs for production
 
 **Backend Deployment:**
+
 - [ ] Set up production environment variables for Python backend
-- [ ] Deploy FastAPI backend (Railway/Render/DigitalOcean)
+- [ ] Deploy FastAPI backend (Render)
 - [ ] Configure CORS for production frontend domain
 - [ ] Set up health check endpoints
 
 **Documentation & Monitoring:**
+
 - [ ] Create user documentation
 - [ ] Set up monitoring and error tracking
 - [ ] Create backup strategy for data
@@ -276,6 +286,7 @@ The PDF processing follows this specific workflow using Python backend:
 6. **Database Storage**: Store the extracted text content in the database
 
 **Required Libraries:**
+
 - `PyPDF2` - For PDF reading and text extraction
 - `io` (Python Standard Library) - For BytesIO memory handling
 
