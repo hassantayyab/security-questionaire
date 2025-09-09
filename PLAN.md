@@ -22,11 +22,11 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 **Frontend Setup:**
 
-- [ ] Initialize Next.js project with TypeScript
-- [ ] Set up Tailwind CSS and shadcn/ui
-- [ ] Configure environment variables for backend API URL
-- [ ] Set up Supabase client configuration for frontend
-- [ ] Create basic project structure and routing
+- [x] Initialize Next.js project with TypeScript
+- [x] Set up Tailwind CSS and shadcn/ui
+- [x] Configure environment variables for backend API URL
+- [x] Set up Supabase client configuration for frontend
+- [x] Create basic project structure and routing
 
 **Backend Setup:**
 
@@ -39,20 +39,20 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 ### Phase 2: Basic UI Structure (Day 1-2)
 
-- [ ] Create main layout with two-tab structure
-- [ ] Implement "Knowledge Base" tab UI
-- [ ] Implement "Questions & Answers" tab UI
-- [ ] Add basic navigation and styling
-- [ ] Create reusable components (buttons, tables, file uploads)
+- [x] Create main layout with two-tab structure
+- [x] Implement "Knowledge Base" tab UI
+- [x] Implement "Questions & Answers" tab UI
+- [x] Add basic navigation and styling
+- [x] Create reusable components (buttons, tables, file uploads)
 
 ### Phase 3: Knowledge Base - PDF Upload (Day 2-3)
 
 **Frontend:**
 
-- [ ] Create PDF file upload component
-- [ ] Set up file validation (PDF only, size limits)
-- [ ] Implement API calls to backend endpoints
-- [ ] Display uploaded policies in table (name, date, size)
+- [x] Create PDF file upload component
+- [x] Set up file validation (PDF only, size limits)
+- [x] Implement API calls to backend endpoints
+- [x] Display uploaded policies in table (name, date, size)
 
 **Backend:**
 
@@ -79,18 +79,18 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 **Frontend:**
 
-- [ ] Add text preview functionality
-- [ ] Add loading states during processing
-- [ ] Display extraction status and errors
+- [x] Add text preview functionality
+- [x] Add loading states during processing
+- [x] Display extraction status and errors
 
 ### Phase 5: Questions Upload & Management (Day 4-5)
 
 **Frontend:**
 
-- [ ] Create Excel file upload component for questionnaires
-- [ ] Implement API calls for Excel upload
-- [ ] Display questions in table format
-- [ ] Handle upload errors and status
+- [x] Create Excel file upload component for questionnaires
+- [x] Implement API calls for Excel upload
+- [x] Display questions in table format
+- [x] Handle upload errors and status
 
 **Backend:**
 
@@ -115,20 +115,22 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 **Frontend:**
 
-- [ ] Create trigger button for AI answer generation
-- [ ] Add loading states during AI processing
-- [ ] Display generation progress and results
+- [x] Create trigger button for AI answer generation
+- [x] Add loading states during AI processing
+- [x] Display generation progress and results
 
 ### Phase 7: Answer Review & Editing (Day 6-7)
 
 **Frontend:**
-- [ ] Make answer column editable in table
-- [ ] Implement inline editing functionality
-- [ ] Add save/cancel editing actions
-- [ ] Create approve/unapprove functionality UI
-- [ ] Add bulk approval options
+
+- [x] Make answer column editable in table
+- [x] Implement inline editing functionality
+- [x] Add save/cancel editing actions
+- [x] Create approve/unapprove functionality UI
+- [x] Add bulk approval options
 
 **Backend:**
+
 - [x] Create endpoints for answer updates (/answers/{id})
 - [x] Create endpoints for status changes (/answers/{id}/approve)
 - [x] Implement bulk operations endpoint
@@ -148,10 +150,10 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 **Frontend:**
 
-- [ ] Add export buttons and UI
-- [ ] Implement file download triggers
-- [ ] Add export loading states
-- [ ] Handle download errors
+- [x] Add export buttons and UI
+- [x] Implement file download triggers
+- [x] Add export loading states
+- [x] Handle download errors
 
 ### Phase 9: Error Handling & Validation (Day 8)
 
