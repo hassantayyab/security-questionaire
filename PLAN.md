@@ -36,21 +36,21 @@ Building a security questionnaire application similar to Vanta that automaticall
 
 ### Phase 3: Knowledge Base - PDF Upload (Day 2-3)
 
-- [ ] Create PDF file upload component
-- [ ] Set up file validation (PDF only, size limits)
-- [ ] Implement file upload API endpoint
-- [ ] Create database schema for policies
-- [ ] Store uploaded PDF files locally
-- [ ] Display uploaded policies in table (name, date, size)
+- [x] Create PDF file upload component
+- [x] Set up file validation (PDF only, size limits)
+- [x] Implement file upload API endpoint
+- [x] Create database schema for policies
+- [x] Store uploaded PDF files in Supabase Storage
+- [x] Display uploaded policies in table (name, date, size)
 
 ### Phase 4: PDF Text Extraction (Day 3-4)
 
-- [ ] Install and configure pdf-parse library
-- [ ] Create PDF text extraction service
-- [ ] Extract and store full text content in database
+- [x] Install and configure pdf-parse library
+- [x] Create PDF text extraction service
+- [x] Extract and store full text content in database
 - [ ] Add text preview functionality
-- [ ] Handle PDF extraction errors gracefully
-- [ ] Add loading states during processing
+- [x] Handle PDF extraction errors gracefully
+- [x] Add loading states during processing
 
 ### Phase 5: Questions Upload & Management (Day 4-5)
 

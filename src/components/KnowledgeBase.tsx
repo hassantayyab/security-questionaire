@@ -1,45 +1,66 @@
 'use client'
 
-import { useState } from 'react'
-import { Upload, FileText, Calendar, Trash2 } from 'lucide-react'
-
-interface Policy {
-  id: string
-  name: string
-  filename: string
-  uploadDate: string
-  fileSize: number
-}
+import { useState, useEffect } from 'react'
+import { Upload, FileText, Calendar, Trash2, AlertCircle } from 'lucide-react'
+import { PolicyService } from '@/lib/services/policies'
+import { type Policy } from '@/lib/supabase'
 
 export function KnowledgeBase() {
   const [policies, setPolicies] = useState<Policy[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load policies on component mount
+  useEffect(() => {
+    loadPolicies()
+  }, [])
+
+  const loadPolicies = async () => {
+    try {
+      setIsLoading(true)
+      const fetchedPolicies = await PolicyService.getAllPolicies()
+      setPolicies(fetchedPolicies)
+      setError(null)
+    } catch (err) {
+      console.error('Error loading policies:', err)
+      setError('Failed to load policies')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
     if (file.type !== 'application/pdf') {
-      alert('Please upload only PDF files')
+      setError('Please upload only PDF files')
+      return
+    }
+
+    // Check file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      setError('File size too large. Maximum 10MB allowed.')
       return
     }
 
     setIsUploading(true)
+    setError(null)
     
-    // TODO: Implement actual file upload to Supabase
-    // For now, just simulate upload
-    setTimeout(() => {
-      const newPolicy: Policy = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: file.name.replace('.pdf', ''),
-        filename: file.name,
-        uploadDate: new Date().toISOString().split('T')[0],
-        fileSize: file.size
-      }
+    try {
+      const newPolicy = await PolicyService.uploadPDF(file)
+      setPolicies(prev => [newPolicy, ...prev])
       
-      setPolicies(prev => [...prev, newPolicy])
+      // Clear the file input
+      event.target.value = ''
+    } catch (err) {
+      console.error('Upload error:', err)
+      setError(err instanceof Error ? err.message : 'Failed to upload file')
+    } finally {
       setIsUploading(false)
-    }, 2000)
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -50,8 +71,27 @@ export function KnowledgeBase() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const deletePolicy = (id: string) => {
-    setPolicies(prev => prev.filter(policy => policy.id !== id))
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString()
+  }
+
+  const deletePolicy = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this policy? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const success = await PolicyService.deletePolicy(id)
+      if (success) {
+        setPolicies(prev => prev.filter(policy => policy.id !== id))
+        setError(null)
+      } else {
+        setError('Failed to delete policy')
+      }
+    } catch (err) {
+      console.error('Delete error:', err)
+      setError('Failed to delete policy')
+    }
   }
 
   return (
@@ -84,6 +124,7 @@ export function KnowledgeBase() {
           </div>
         </div>
 
+        {/* Upload Status Messages */}
         {isUploading && (
           <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
             <div className="flex">
@@ -92,8 +133,27 @@ export function KnowledgeBase() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-blue-700">
-                  Uploading and processing document...
+                  Uploading and extracting text from PDF...
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-red-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{error}</p>
+                <button
+                  onClick={() => setError(null)}
+                  className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+                >
+                  Dismiss
+                </button>
               </div>
             </div>
           </div>
@@ -106,7 +166,12 @@ export function KnowledgeBase() {
           <h3 className="text-lg font-medium text-gray-900">Uploaded Policies</h3>
         </div>
         
-        {policies.length === 0 ? (
+        {isLoading ? (
+          <div className="px-6 py-12 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-sm text-gray-500">Loading policies...</p>
+          </div>
+        ) : policies.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <FileText className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No policies uploaded</h3>
@@ -152,11 +217,11 @@ export function KnowledgeBase() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="h-4 w-4 mr-2" />
-                        {policy.uploadDate}
+                        {formatDate(policy.upload_date)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatFileSize(policy.fileSize)}
+                      {formatFileSize(policy.file_size)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
