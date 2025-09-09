@@ -23,7 +23,7 @@ export interface Question {
   id: string;
   question_text: string;
   answer?: string;
-  status: "unapproved" | "approved";
+  status: 'unapproved' | 'approved';
   questionnaire_id: string;
   created_at: string;
   updated_at: string;
@@ -88,5 +88,5 @@ export interface TableColumn<T> {
 
 export interface BulkOperationRequest {
   question_ids: string[];
-  status: "approved" | "unapproved";
+  status: 'approved' | 'unapproved';
 }

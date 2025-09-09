@@ -30,6 +30,7 @@ nano .env.local
 ```
 
 Required environment variables:
+
 - `NEXT_PUBLIC_API_URL`: Backend API URL (http://localhost:8000)
 - `NEXT_PUBLIC_API_BASE_URL`: Backend API base URL (http://localhost:8000/api)
 
@@ -75,17 +76,20 @@ frontend/
 ## Components Overview
 
 ### Main Layout
+
 - **Header**: App title and branding
 - **Footer**: Credits and links
 - **Toast System**: Global notification system with Sonner
 
 ### Knowledge Base Tab
+
 - **PDF Upload**: Drag-and-drop PDF file upload
 - **Policy Management**: View uploaded policies with status
 - **Text Extraction**: PyPDF2-based text extraction with progress
 - **File Validation**: Type and size validation
 
 ### Questions & Answers Tab
+
 - **Excel Upload**: Upload questionnaire Excel files
 - **Question Display**: Table view of all questions
 - **AI Generation**: Trigger AI answer generation
@@ -94,6 +98,7 @@ frontend/
 - **Export**: Download approved answers as CSV
 
 ### Reusable Components
+
 - **FileUpload**: Configurable drag-and-drop file upload
 - **shadcn/ui**: Button, Card, Table, Tabs, Input, Badge, Progress, etc.
 
@@ -102,6 +107,7 @@ frontend/
 The frontend communicates with the FastAPI backend through a centralized API client:
 
 ### Endpoints Used
+
 - `POST /api/upload/pdf` - Upload PDF policies
 - `POST /api/upload/excel` - Upload Excel questionnaires
 - `GET /api/questionnaires/` - Get all questionnaires
@@ -113,6 +119,7 @@ The frontend communicates with the FastAPI backend through a centralized API cli
 - `GET /api/questionnaires/{id}/export` - Export approved answers
 
 ### Error Handling
+
 - Custom `ApiError` class for API errors
 - Toast notifications for user feedback
 - Loading states for async operations
@@ -121,18 +128,21 @@ The frontend communicates with the FastAPI backend through a centralized API cli
 ## Dependencies
 
 ### Core Dependencies
+
 - **Next.js 14**: React framework with App Router
 - **React 18**: UI library
 - **TypeScript**: Type safety
 - **Tailwind CSS**: Utility-first CSS framework
 
 ### UI Components
+
 - **shadcn/ui**: Modern component library
 - **Radix UI**: Headless UI primitives
 - **Lucide React**: Icon library
 - **Sonner**: Toast notifications
 
 ### Utilities
+
 - **react-dropzone**: File upload functionality
 - **class-variance-authority**: Component variants
 - **clsx**: Conditional className utility
@@ -141,6 +151,7 @@ The frontend communicates with the FastAPI backend through a centralized API cli
 ## Development
 
 ### Available Scripts
+
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
@@ -150,11 +161,13 @@ npm run type-check   # Run TypeScript checking
 ```
 
 ### Code Style
+
 - **ESLint**: Configured with Next.js rules
 - **TypeScript**: Strict mode enabled
 - **Prettier**: Code formatting (recommended)
 
 ### Adding New Components
+
 ```bash
 # Add shadcn/ui components
 npx shadcn@latest add [component-name]
@@ -180,6 +193,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 ## Deployment
 
 ### Vercel (Recommended)
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -191,7 +205,9 @@ vercel
 ```
 
 ### Other Platforms
+
 The app can be deployed to any platform that supports Next.js:
+
 - **Netlify**: Static export or serverless
 - **Railway**: Full-stack deployment
 - **DigitalOcean App Platform**: Container deployment

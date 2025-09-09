@@ -1,32 +1,24 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  Upload, 
-  FileText, 
-  Trash2, 
-  Eye, 
-  AlertCircle,
-  CheckCircle,
-  Loader2
-} from "lucide-react";
-import { toast } from "sonner";
-import { api, ApiError } from "@/lib/api";
-import { Policy, UploadResponse } from "@/types";
-import { appConfig } from "@/config/app";
-import FileUpload from "@/components/FileUpload";
+import FileUpload from '@/components/FileUpload';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { appConfig } from '@/config/app';
+import { api, ApiError } from '@/lib/api';
+import { Policy, UploadResponse } from '@/types';
+import { AlertCircle, CheckCircle, Eye, FileText, Loader2, Trash2, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function KnowledgeBase() {
   const [policies, setPolicies] = useState<Policy[]>([]);
@@ -46,16 +38,16 @@ export default function KnowledgeBase() {
       // For now, we'll use empty array
       setPolicies([]);
     } catch (error) {
-      console.error("Error loading policies:", error);
-      toast.error("Failed to load policies");
+      console.error('Error loading policies:', error);
+      toast.error('Failed to load policies');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handlePdfUpload = async (file: File) => {
-    if (!file.type.includes("pdf")) {
-      toast.error("Please upload a PDF file");
+    if (!file.type.includes('pdf')) {
+      toast.error('Please upload a PDF file');
       return;
     }
 
@@ -67,13 +59,13 @@ export default function KnowledgeBase() {
     setIsUploading(true);
     try {
       const response: UploadResponse = await api.uploadPdf(file);
-      
+
       if (response.success) {
         toast.success(response.message);
-        
+
         // Add the new policy to the list
         const newPolicy: Policy = {
-          id: response.policy_id || "",
+          id: response.policy_id || '',
           name: response.filename,
           filename: response.filename,
           file_size: response.file_size,
@@ -82,17 +74,17 @@ export default function KnowledgeBase() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-        
-        setPolicies(prev => [newPolicy, ...prev]);
+
+        setPolicies((prev) => [newPolicy, ...prev]);
       } else {
-        toast.error(response.message || "Upload failed");
+        toast.error(response.message || 'Upload failed');
       }
     } catch (error) {
-      console.error("PDF upload error:", error);
+      console.error('PDF upload error:', error);
       if (error instanceof ApiError) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to upload PDF. Please try again.");
+        toast.error('Failed to upload PDF. Please try again.');
       }
     } finally {
       setIsUploading(false);
@@ -100,51 +92,52 @@ export default function KnowledgeBase() {
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
+    if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Upload Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="w-5 h-5" />
+          <CardTitle className='flex items-center gap-2'>
+            <Upload className='w-5 h-5' />
             Upload Policy Documents
           </CardTitle>
           <CardDescription>
-            Upload PDF files containing your security policies. Text will be automatically extracted using PyPDF2.
+            Upload PDF files containing your security policies. Text will be automatically extracted
+            using PyPDF2.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <FileUpload
-            accept=".pdf"
+            accept='.pdf'
             maxSize={appConfig.maxFileSize}
             onUpload={handlePdfUpload}
             isUploading={isUploading}
             allowedTypes={appConfig.allowedFileTypes.pdf}
           />
           {isUploading && (
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
+            <div className='mt-4 space-y-2'>
+              <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                <Loader2 className='w-4 h-4 animate-spin' />
                 Processing PDF with PyPDF2...
               </div>
-              <Progress value={undefined} className="w-full" />
+              <Progress value={undefined} className='w-full' />
             </div>
           )}
         </CardContent>
@@ -153,11 +146,11 @@ export default function KnowledgeBase() {
       {/* Policies List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
+          <CardTitle className='flex items-center gap-2'>
+            <FileText className='w-5 h-5' />
             Uploaded Policies
             {policies.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant='secondary' className='ml-2'>
                 {policies.length}
               </Badge>
             )}
@@ -168,22 +161,22 @@ export default function KnowledgeBase() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+            <div className='flex items-center justify-center py-8'>
+              <Loader2 className='w-6 h-6 animate-spin mr-2' />
               Loading policies...
             </div>
           ) : policies.length === 0 ? (
-            <div className="text-center py-8 space-y-3">
-              <FileText className="w-12 h-12 text-muted-foreground mx-auto" />
-              <div className="text-lg font-medium text-muted-foreground">
+            <div className='text-center py-8 space-y-3'>
+              <FileText className='w-12 h-12 text-muted-foreground mx-auto' />
+              <div className='text-lg font-medium text-muted-foreground'>
                 No policies uploaded yet
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className='text-sm text-muted-foreground'>
                 Upload your first PDF policy document to get started
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className='space-y-4'>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -191,15 +184,15 @@ export default function KnowledgeBase() {
                     <TableHead>Upload Date</TableHead>
                     <TableHead>File Size</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className='text-right'>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {policies.map((policy) => (
                     <TableRow key={policy.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-muted-foreground" />
+                      <TableCell className='font-medium'>
+                        <div className='flex items-center gap-2'>
+                          <FileText className='w-4 h-4 text-muted-foreground' />
                           {policy.name}
                         </div>
                       </TableCell>
@@ -207,32 +200,32 @@ export default function KnowledgeBase() {
                       <TableCell>{formatFileSize(policy.file_size)}</TableCell>
                       <TableCell>
                         {policy.extracted_text ? (
-                          <Badge variant="default" className="gap-1">
-                            <CheckCircle className="w-3 h-3" />
+                          <Badge variant='default' className='gap-1'>
+                            <CheckCircle className='w-3 h-3' />
                             Processed
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="gap-1">
-                            <AlertCircle className="w-3 h-3" />
+                          <Badge variant='secondary' className='gap-1'>
+                            <AlertCircle className='w-3 h-3' />
                             Processing
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <TableCell className='text-right'>
+                        <div className='flex items-center justify-end gap-2'>
                           <Button
-                            variant="outline"
-                            size="sm"
+                            variant='outline'
+                            size='sm'
                             onClick={() => setSelectedPolicy(policy)}
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className='w-4 h-4' />
                           </Button>
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
+                            variant='outline'
+                            size='sm'
+                            className='text-destructive hover:text-destructive'
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className='w-4 h-4' />
                           </Button>
                         </div>
                       </TableCell>

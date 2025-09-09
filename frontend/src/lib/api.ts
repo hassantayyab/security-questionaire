@@ -1,13 +1,9 @@
-import { appConfig } from "@/config/app";
+import { appConfig } from '@/config/app';
 
 export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public response?: any
-  ) {
+  constructor(message: string, public status: number, public response?: any) {
     super(message);
-    this.name = "ApiError";
+    this.name = 'ApiError';
   }
 }
 
@@ -18,16 +14,13 @@ class ApiClient {
     this.baseUrl = appConfig.apiBaseUrl;
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...options.headers,
         },
         ...options,
@@ -38,7 +31,7 @@ class ApiClient {
         throw new ApiError(
           errorData.detail || `HTTP error! status: ${response.status}`,
           response.status,
-          errorData
+          errorData,
         );
       }
 
@@ -54,13 +47,13 @@ class ApiClient {
   private async uploadFile<T>(
     endpoint: string,
     file: File,
-    additionalData?: Record<string, string>
+    additionalData?: Record<string, string>,
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const formData = new FormData();
-    
-    formData.append("file", file);
-    
+
+    formData.append('file', file);
+
     if (additionalData) {
       Object.entries(additionalData).forEach(([key, value]) => {
         formData.append(key, value);
@@ -69,7 +62,7 @@ class ApiClient {
 
     try {
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         body: formData,
       });
 
@@ -78,7 +71,7 @@ class ApiClient {
         throw new ApiError(
           errorData.detail || `HTTP error! status: ${response.status}`,
           response.status,
-          errorData
+          errorData,
         );
       }
 
@@ -93,22 +86,22 @@ class ApiClient {
 
   // Health check
   async healthCheck() {
-    return this.request<any>("/health");
+    return this.request<any>('/health');
   }
 
   // PDF Upload
   async uploadPdf(file: File) {
-    return this.uploadFile<any>("/upload/pdf", file);
+    return this.uploadFile<any>('/upload/pdf', file);
   }
 
   // Excel Upload
   async uploadExcel(file: File) {
-    return this.uploadFile<any>("/upload/excel", file);
+    return this.uploadFile<any>('/upload/excel', file);
   }
 
   // Questionnaires
   async getQuestionnaires() {
-    return this.request<any>("/questionnaires/");
+    return this.request<any>('/questionnaires/');
   }
 
   async getQuestions(questionnaireId: string) {
@@ -117,26 +110,26 @@ class ApiClient {
 
   async generateAnswers(questionnaireId: string) {
     return this.request<any>(`/questionnaires/${questionnaireId}/generate-answers`, {
-      method: "POST",
+      method: 'POST',
     });
   }
 
-  async updateAnswer(questionId: string, answer: string, status: string = "unapproved") {
+  async updateAnswer(questionId: string, answer: string, status: string = 'unapproved') {
     return this.request<any>(`/questionnaires/questions/${questionId}/answer`, {
-      method: "PUT",
+      method: 'PUT',
       body: JSON.stringify({ answer, status }),
     });
   }
 
   async approveAnswer(questionId: string) {
     return this.request<any>(`/questionnaires/questions/${questionId}/approve`, {
-      method: "PUT",
+      method: 'PUT',
     });
   }
 
   async bulkApproveAnswers(questionIds: string[], status: string) {
-    return this.request<any>("/questionnaires/questions/bulk-approve", {
-      method: "PUT",
+    return this.request<any>('/questionnaires/questions/bulk-approve', {
+      method: 'PUT',
       body: JSON.stringify({ question_ids: questionIds, status }),
     });
   }
