@@ -3,13 +3,11 @@
   "outputDirectory": "frontend/.next",
   "installCommand": "cd frontend && npm ci",
   "framework": "nextjs",
-  "functions": {
-    "frontend/src/app/**": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "env": {
-    "NEXT_PUBLIC_API_URL": "http://localhost:8000",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://havkzgxbbgbcsoyspbda.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhdmt6Z3hiYmdiY3NveXNwYmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0Mjk5ODgsImV4cCI6MjA3MzAwNTk4OH0.GAIk4514xTtv2SFc_ksVpxSl4r0Vp58hqKmKW9GnnoE",
+    "NEXT_PUBLIC_APP_NAME": "Summit Security Questionnaire",
+    "NEXT_PUBLIC_MAX_FILE_SIZE": "10485760"
   }
 }
