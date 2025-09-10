@@ -32,8 +32,8 @@ class AIService:
         
         # Claude model configuration
         self.model = "claude-sonnet-4-20250514"  # Updated to latest Claude 4 Sonnet
-        self.max_tokens = 1000
-        self.temperature = 0.1  # Lower temperature for more consistent, factual responses
+        self.max_tokens = 2000
+        self.temperature = 0.2  # Lower temperature for more consistent, factual responses
     
     async def generate_answer(self, question: str, policy_context: str) -> str:
         """
