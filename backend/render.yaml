@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: summit-security-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app.main:app -c gunicorn.conf.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://your-frontend-url.vercel.app,http://localhost:3000
