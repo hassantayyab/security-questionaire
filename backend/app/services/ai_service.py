@@ -8,6 +8,8 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +33,7 @@ class AIService:
         self.client = anthropic.Anthropic(api_key=self.api_key)
         
         # Claude model configuration
-        self.model = "claude-sonnet-4-20250514"  # Updated to latest Claude 4 Sonnet
+        self.model = "claude-3-5-haiku-20241022"  # Updated to stable Claude 3.5 haiku
         self.max_tokens = 2000
         self.temperature = 0.2  # Lower temperature for more consistent, factual responses
     
@@ -58,19 +60,26 @@ class AIService:
             prompt = self._create_prompt(question, policy_context)
             logger.info(f"Prompt created, length: {len(prompt)} characters")
             
-            # Call Claude API
-            logger.info("Calling Claude API...")
-            response = self.client.messages.create(
-                model=self.model,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            )
+            # Call Claude API asynchronously
+            logger.info("Calling Claude API asynchronously...")
+            
+            # Run the synchronous API call in a thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            with ThreadPoolExecutor() as executor:
+                response = await loop.run_in_executor(
+                    executor,
+                    lambda: self.client.messages.create(
+                        model=self.model,
+                        max_tokens=self.max_tokens,
+                        temperature=self.temperature,
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ]
+                    )
+                )
             
             answer = response.content[0].text.strip()
             

@@ -47,9 +47,11 @@ export interface GenerateAnswersResponse {
   success: boolean;
   message: string;
   questionnaire_id: string;
-  generated_count: number;
+  generated_count?: number;
   total_questions: number;
-  errors: string[];
+  errors?: string[];
+  status?: string;
+  note?: string;
 }
 
 export interface ExportResponse {
