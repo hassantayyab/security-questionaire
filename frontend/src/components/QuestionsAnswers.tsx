@@ -514,7 +514,7 @@ export default function QuestionsAnswers() {
                   <Table className='min-w-full'>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className='w-12 min-w-12'>
+                        <TableHead className='w-8'>
                           <input
                             type='checkbox'
                             className='rounded'
@@ -530,16 +530,20 @@ export default function QuestionsAnswers() {
                             }}
                           />
                         </TableHead>
-                        <TableHead className='w-1/3 min-w-[250px]'>Question</TableHead>
-                        <TableHead className='w-2/5 min-w-[300px]'>Answer</TableHead>
-                        <TableHead className='w-20 min-w-[100px]'>Status</TableHead>
-                        <TableHead className='w-24 min-w-[120px] text-right'>Actions</TableHead>
+                        <TableHead className='w-[35%]' style={{ maxWidth: '250px' }}>
+                          Question
+                        </TableHead>
+                        <TableHead className='w-[35%]' style={{ maxWidth: '250px' }}>
+                          Answer
+                        </TableHead>
+                        <TableHead className='w-20'>Status</TableHead>
+                        <TableHead className='w-24 text-right'>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {questions.map((question) => (
                         <TableRow key={question.id}>
-                          <TableCell className='w-12 min-w-12'>
+                          <TableCell>
                             <input
                               type='checkbox'
                               className='rounded'
@@ -547,12 +551,12 @@ export default function QuestionsAnswers() {
                               onChange={() => toggleQuestionSelection(question.id)}
                             />
                           </TableCell>
-                          <TableCell className='w-1/3 min-w-[250px]'>
-                            <div className='text-sm leading-relaxed break-words pr-4'>
+                          <TableCell className='w-[35%]' style={{ maxWidth: '250px' }}>
+                            <div className='text-sm pr-4 line-clamp-2 leading-relaxed whitespace-normal break-words'>
                               {question.question_text}
                             </div>
                           </TableCell>
-                          <TableCell className='w-2/5 min-w-[300px]'>
+                          <TableCell className='w-[35%]' style={{ maxWidth: '250px' }}>
                             {editingQuestionId === question.id ? (
                               <div className='space-y-3 py-2'>
                                 <Textarea
@@ -583,9 +587,11 @@ export default function QuestionsAnswers() {
                                 </div>
                               </div>
                             ) : (
-                              <div className='text-sm leading-relaxed break-words pr-4 py-2'>
+                              <div className='text-sm pr-4 py-2'>
                                 {question.answer ? (
-                                  <div className='whitespace-pre-wrap'>{question.answer}</div>
+                                  <div className='line-clamp-2 leading-relaxed whitespace-normal break-words'>
+                                    {question.answer}
+                                  </div>
                                 ) : (
                                   <span className='text-muted-foreground italic'>
                                     No answer generated yet
@@ -594,7 +600,7 @@ export default function QuestionsAnswers() {
                               </div>
                             )}
                           </TableCell>
-                          <TableCell className='w-20 min-w-[100px]'>
+                          <TableCell>
                             <Badge
                               variant={question.status === 'approved' ? 'default' : 'secondary'}
                               className='gap-1'
@@ -607,7 +613,7 @@ export default function QuestionsAnswers() {
                               <span className='hidden lg:inline'>{question.status}</span>
                             </Badge>
                           </TableCell>
-                          <TableCell className='w-24 min-w-[120px] text-right'>
+                          <TableCell className='text-right'>
                             <div className='flex items-center justify-end gap-1'>
                               <Button
                                 variant='outline'
