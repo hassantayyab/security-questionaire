@@ -147,7 +147,11 @@ export default function QuestionsAnswers() {
             description:
               response.note ||
               'Answers are being generated in the background. Please refresh to see progress.',
-            duration: 6000,
+            duration: Infinity, // Don't auto-hide
+            cancel: {
+              label: 'Close',
+              onClick: () => {}, // Just closes the toast
+            },
           });
         } else {
           toast.success(`Generated answers for ${response.generated_count || 0} questions`);
