@@ -152,4 +152,33 @@
     text-overflow: ellipsis;
     word-break: break-word;
   }
+
+  /* Markdown content styling within line-clamp */
+  .markdown-content {
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .markdown-content p {
+    margin: 0;
+    display: inline;
+  }
+
+  .markdown-content * {
+    line-height: inherit;
+  }
+
+  .markdown-content code {
+    font-size: 0.875em;
+  }
+
+  .markdown-content strong,
+  .markdown-content b {
+    font-weight: 600;
+  }
+
+  .markdown-content em,
+  .markdown-content i {
+    font-style: italic;
+  }
 }

@@ -32,6 +32,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 
 export default function QuestionsAnswers() {
@@ -380,19 +382,17 @@ export default function QuestionsAnswers() {
               {questionnaires.map((questionnaire) => (
                 <Card
                   key={questionnaire.id}
-                  className={`transition-colors ${
+                  className={`transition-colors cursor-pointer ${
                     selectedQuestionnaire?.id === questionnaire.id
                       ? 'border-primary bg-primary/5'
                       : 'hover:border-primary/50'
                   }`}
+                  onClick={() => setSelectedQuestionnaire(questionnaire)}
                 >
                   <CardContent className='p-4'>
                     <div className='space-y-2'>
                       <div className='flex items-center justify-between'>
-                        <div
-                          className='flex-1 cursor-pointer'
-                          onClick={() => setSelectedQuestionnaire(questionnaire)}
-                        >
+                        <div className='flex-1 cursor-pointer'>
                           <div className='font-medium'>{questionnaire.name}</div>
                           <div className='text-sm text-muted-foreground'>
                             {formatDate(questionnaire.upload_date)}
@@ -589,8 +589,56 @@ export default function QuestionsAnswers() {
                             ) : (
                               <div className='text-sm pr-4 py-2'>
                                 {question.answer ? (
-                                  <div className='line-clamp-2 leading-relaxed whitespace-normal break-words'>
-                                    {question.answer}
+                                  <div className='line-clamp-2 leading-relaxed whitespace-normal break-words markdown-content'>
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm]}
+                                      components={{
+                                        p: ({ children }) => (
+                                          <span className='inline'>{children}</span>
+                                        ),
+                                        strong: ({ children }) => (
+                                          <strong className='font-semibold'>{children}</strong>
+                                        ),
+                                        em: ({ children }) => (
+                                          <em className='italic'>{children}</em>
+                                        ),
+                                        code: ({ children }) => (
+                                          <code className='bg-muted px-1 py-0.5 rounded text-xs font-mono'>
+                                            {children}
+                                          </code>
+                                        ),
+                                        ul: ({ children }) => (
+                                          <span className='inline'>{children}</span>
+                                        ),
+                                        ol: ({ children }) => (
+                                          <span className='inline'>{children}</span>
+                                        ),
+                                        li: ({ children }) => (
+                                          <span className='inline'>{children} </span>
+                                        ),
+                                        h1: ({ children }) => (
+                                          <span className='font-semibold'>{children}</span>
+                                        ),
+                                        h2: ({ children }) => (
+                                          <span className='font-semibold'>{children}</span>
+                                        ),
+                                        h3: ({ children }) => (
+                                          <span className='font-semibold'>{children}</span>
+                                        ),
+                                        h4: ({ children }) => (
+                                          <span className='font-semibold'>{children}</span>
+                                        ),
+                                        h5: ({ children }) => (
+                                          <span className='font-semibold'>{children}</span>
+                                        ),
+                                        h6: ({ children }) => (
+                                          <span className='font-semibold'>{children}</span>
+                                        ),
+                                        br: () => <span> </span>,
+                                      }}
+                                    >
+                                      {question.answer}
+                                    </ReactMarkdown>
                                   </div>
                                 ) : (
                                   <span className='text-muted-foreground italic'>
