@@ -44,6 +44,6 @@ POL-14 defines role-based access control system.
 **ABSOLUTE RULES:**
 
 - Start with YES/NO/SPECIFIC ANSWER immediately
-- Second line: Policy name + reason
+- Second line: Policy name + very short reason
 - NO preamble text whatsoever
 - Maximum 2 lines total
