@@ -203,10 +203,7 @@ export default function KnowledgeBase() {
             <Upload className='w-5 h-5' />
             Upload Policy Documents
           </CardTitle>
-          <CardDescription>
-            Upload PDF files containing your security policies. Text will be automatically extracted
-            using PyPDF2.
-          </CardDescription>
+          <CardDescription>Upload PDF files containing your security policies.</CardDescription>
         </CardHeader>
         <CardContent>
           <FileUpload

@@ -38,10 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <footer className='border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 mt-12'>
             <div className='container mx-auto px-4 py-6'>
-              <div className='flex items-center justify-between text-sm text-muted-foreground'>
-                <div>© 2024 {appConfig.name}. All rights reserved.</div>
-                <div className='flex items-center space-x-4'>
-                  <span>Powered by FastAPI + Next.js</span>
+              <div className='flex items-center text-sm text-muted-foreground'>
+                <div>
+                  © {new Date().getFullYear()} {appConfig.name}. All rights reserved.
                 </div>
               </div>
             </div>
