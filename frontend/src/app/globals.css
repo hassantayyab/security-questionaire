@@ -181,4 +181,19 @@
   .markdown-content i {
     font-style: italic;
   }
+
+  /* Animation for newly generated answers */
+  @keyframes glow {
+    0%,
+    100% {
+      background-color: transparent;
+    }
+    50% {
+      background-color: rgb(34 197 94 / 0.1);
+    }
+  }
+
+  .answer-glow {
+    animation: glow 2s ease-in-out 3 alternate;
+  }
 }

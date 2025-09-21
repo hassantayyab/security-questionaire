@@ -32,7 +32,7 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
@@ -47,6 +47,17 @@ export default function QuestionsAnswers() {
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [editingAnswer, setEditingAnswer] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [generationProgress, setGenerationProgress] = useState<{
+    total: number;
+    completed: number;
+  } | null>(null);
+  const isGeneratingRef = useRef(false);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    isGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
 
   useEffect(() => {
     loadQuestionnaires();
@@ -57,6 +68,15 @@ export default function QuestionsAnswers() {
       loadQuestions(selectedQuestionnaire.id);
     }
   }, [selectedQuestionnaire]);
+
+  // Cleanup polling interval on unmount or questionnaire change
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   const loadQuestionnaires = async () => {
     try {
@@ -77,13 +97,74 @@ export default function QuestionsAnswers() {
     try {
       const response = await api.getQuestions(questionnaireId);
       if (response.success) {
-        setQuestions(response.questions || []);
+        const newQuestions = response.questions || [];
+        setQuestions(newQuestions);
       }
     } catch (error) {
       console.error('Error loading questions:', error);
       toast.error('Failed to load questions');
     }
   };
+
+  const startPolling = (questionnaireId: string, totalQuestions: number) => {
+    // Stop any existing polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+
+    // Get current completed count
+    const currentCompleted = questions.filter(
+      (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
+    ).length;
+
+    setGenerationProgress({ total: totalQuestions, completed: currentCompleted });
+
+    const interval = setInterval(() => {
+      loadQuestions(questionnaireId);
+    }, 2000); // Poll every 2 seconds for faster updates
+
+    setPollingInterval(interval);
+
+    // Add a timeout to prevent infinite polling (max 10 minutes)
+    setTimeout(() => {
+      if (pollingInterval) {
+        stopPolling();
+        toast.warning('Answer generation timed out. Some answers may still be processing.');
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+  };
+
+  const stopPolling = useCallback(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+    setGenerationProgress(null);
+    setIsGenerating(false);
+  }, [pollingInterval]);
+
+  // Check for completion when questions change
+  useEffect(() => {
+    if (isGeneratingRef.current && questions.length > 0) {
+      const questionsWithAnswers = questions.filter(
+        (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
+      ).length;
+
+      // Update progress - only if it's actually different
+      setGenerationProgress((prev) => {
+        if (prev && prev.completed !== questionsWithAnswers) {
+          return { ...prev, completed: questionsWithAnswers };
+        }
+        return prev;
+      });
+
+      // Check if all questions have answers - if yes, stop polling
+      if (questionsWithAnswers === questions.length && questionsWithAnswers > 0) {
+        stopPolling();
+        toast.success(`All ${questionsWithAnswers} answers have been generated!`);
+      }
+    }
+  }, [questions, stopPolling]);
 
   const handleExcelUpload = async (file: File) => {
     const allowedExtensions = ['.xlsx', '.xls'];
@@ -144,27 +225,28 @@ export default function QuestionsAnswers() {
       if (response.success) {
         if (response.status === 'processing') {
           toast.success(response.message, {
-            description:
-              response.note ||
-              'Answers are being generated in the background. Please refresh to see progress.',
-            duration: Infinity, // Don't auto-hide
-            cancel: {
-              label: 'Close',
-              onClick: () => {}, // Just closes the toast
-            },
+            description: 'Watch the progress below as answers are generated in real-time!',
+            duration: 5000,
           });
+
+          // Start polling for real-time updates
+          const totalToGenerate = response.total_questions || questions.length;
+          startPolling(selectedQuestionnaire.id, totalToGenerate);
         } else {
+          // Immediate completion (shouldn't happen with current backend, but good fallback)
           toast.success(`Generated answers for ${response.generated_count || 0} questions`);
 
           if (response.errors && response.errors.length > 0) {
             toast.warning(`${response.errors.length} questions had errors`);
           }
-        }
 
-        // Reload questions to get any newly generated answers
-        await loadQuestions(selectedQuestionnaire.id);
+          // Reload questions to get the final state
+          await loadQuestions(selectedQuestionnaire.id);
+          setIsGenerating(false);
+        }
       } else {
         toast.error('Failed to start answer generation');
+        setIsGenerating(false);
       }
     } catch (error) {
       console.error('Generate answers error:', error);
@@ -173,7 +255,6 @@ export default function QuestionsAnswers() {
       } else {
         toast.error('Failed to start answer generation. Please try again.');
       }
-    } finally {
       setIsGenerating(false);
     }
   };
@@ -503,6 +584,13 @@ export default function QuestionsAnswers() {
                       )}
                     </Button>
 
+                    {isGenerating && (
+                      <Button variant='outline' onClick={stopPolling} className='gap-2'>
+                        <X className='w-4 h-4' />
+                        Stop Generation
+                      </Button>
+                    )}
+
                     {selectedQuestions.size > 0 && (
                       <>
                         <Button
@@ -531,6 +619,35 @@ export default function QuestionsAnswers() {
                       </Button>
                     )}
                   </div>
+
+                  {/* Generation Progress */}
+                  {isGenerating && generationProgress && (
+                    <Card className='border-dashed bg-muted/30'>
+                      <CardContent className='py-4'>
+                        <div className='space-y-3'>
+                          <div className='flex items-center justify-between text-sm'>
+                            <div className='flex items-center gap-2'>
+                              <Loader2 className='w-4 h-4 animate-spin' />
+                              <span className='font-medium'>Generating Answers</span>
+                            </div>
+                            <div className='text-muted-foreground'>
+                              {generationProgress.completed} of {generationProgress.total} completed
+                              {generationProgress.completed >= generationProgress.total && (
+                                <span className='text-green-600 ml-2'>✓ Complete</span>
+                              )}
+                            </div>
+                          </div>
+                          <Progress
+                            value={(generationProgress.completed / generationProgress.total) * 100}
+                            className='w-full h-2'
+                          />
+                          <div className='text-xs text-muted-foreground'>
+                            Answers appear automatically below as they are generated by AI
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Questions Table */}
                   <div className='overflow-x-auto border rounded-lg'>
@@ -564,179 +681,187 @@ export default function QuestionsAnswers() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {questions.map((question) => (
-                          <TableRow key={question.id}>
-                            <TableCell>
-                              <input
-                                type='checkbox'
-                                className='rounded'
-                                checked={selectedQuestions.has(question.id)}
-                                onChange={() => toggleQuestionSelection(question.id)}
-                              />
-                            </TableCell>
-                            <TableCell className='w-[35%]' style={{ maxWidth: '250px' }}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className='text-sm pr-4 line-clamp-2 leading-relaxed whitespace-normal break-words cursor-help'>
+                        {questions.map((question) => {
+                          const hasAnswer = question.answer && question.answer.trim();
+                          return (
+                            <TableRow
+                              key={question.id}
+                              className={`transition-all duration-300 ${
+                                hasAnswer && isGenerating ? 'answer-glow' : ''
+                              }`}
+                            >
+                              <TableCell>
+                                <input
+                                  type='checkbox'
+                                  className='rounded'
+                                  checked={selectedQuestions.has(question.id)}
+                                  onChange={() => toggleQuestionSelection(question.id)}
+                                />
+                              </TableCell>
+                              <TableCell className='w-[35%]' style={{ maxWidth: '250px' }}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className='text-sm pr-4 line-clamp-2 leading-relaxed whitespace-normal break-words cursor-help'>
+                                      {question.question_text}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    className='max-w-sm p-3 text-sm whitespace-normal break-words'
+                                    side='top'
+                                  >
                                     {question.question_text}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  className='max-w-sm p-3 text-sm whitespace-normal break-words'
-                                  side='top'
-                                >
-                                  {question.question_text}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TableCell>
-                            <TableCell className='w-[35%]' style={{ maxWidth: '250px' }}>
-                              {editingQuestionId === question.id ? (
-                                <div className='space-y-3 py-2'>
-                                  <Textarea
-                                    value={editingAnswer}
-                                    onChange={(e) => setEditingAnswer(e.target.value)}
-                                    placeholder='Enter answer...'
-                                    className='text-sm resize-none min-h-[80px] w-full'
-                                    rows={3}
-                                  />
-                                  <div className='flex gap-2'>
-                                    <Button
-                                      size='sm'
-                                      onClick={() => saveAnswer(question.id)}
-                                      className='gap-1'
-                                    >
-                                      <Save className='w-3 h-3' />
-                                      Save
-                                    </Button>
-                                    <Button
-                                      size='sm'
-                                      variant='outline'
-                                      onClick={cancelEditing}
-                                      className='gap-1'
-                                    >
-                                      <X className='w-3 h-3' />
-                                      Cancel
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className='text-sm pr-4 py-2'>
-                                  {question.answer ? (
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className='line-clamp-2 leading-relaxed whitespace-normal break-words markdown-content cursor-help'>
-                                          <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                            components={{
-                                              p: ({ children }) => (
-                                                <span className='inline'>{children}</span>
-                                              ),
-                                              strong: ({ children }) => (
-                                                <strong className='font-semibold'>
-                                                  {children}
-                                                </strong>
-                                              ),
-                                              em: ({ children }) => (
-                                                <em className='italic'>{children}</em>
-                                              ),
-                                              code: ({ children }) => (
-                                                <code className='bg-muted px-1 py-0.5 rounded text-xs font-mono'>
-                                                  {children}
-                                                </code>
-                                              ),
-                                              ul: ({ children }) => (
-                                                <span className='inline'>{children}</span>
-                                              ),
-                                              ol: ({ children }) => (
-                                                <span className='inline'>{children}</span>
-                                              ),
-                                              li: ({ children }) => (
-                                                <span className='inline'>{children} </span>
-                                              ),
-                                              h1: ({ children }) => (
-                                                <span className='font-semibold'>{children}</span>
-                                              ),
-                                              h2: ({ children }) => (
-                                                <span className='font-semibold'>{children}</span>
-                                              ),
-                                              h3: ({ children }) => (
-                                                <span className='font-semibold'>{children}</span>
-                                              ),
-                                              h4: ({ children }) => (
-                                                <span className='font-semibold'>{children}</span>
-                                              ),
-                                              h5: ({ children }) => (
-                                                <span className='font-semibold'>{children}</span>
-                                              ),
-                                              h6: ({ children }) => (
-                                                <span className='font-semibold'>{children}</span>
-                                              ),
-                                              br: () => <span> </span>,
-                                            }}
-                                          >
-                                            {question.answer}
-                                          </ReactMarkdown>
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent
-                                        className='max-w-md p-3 text-sm whitespace-normal break-words'
-                                        side='top'
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableCell>
+                              <TableCell className='w-[35%]' style={{ maxWidth: '250px' }}>
+                                {editingQuestionId === question.id ? (
+                                  <div className='space-y-3 py-2'>
+                                    <Textarea
+                                      value={editingAnswer}
+                                      onChange={(e) => setEditingAnswer(e.target.value)}
+                                      placeholder='Enter answer...'
+                                      className='text-sm resize-none min-h-[80px] w-full'
+                                      rows={3}
+                                    />
+                                    <div className='flex gap-2'>
+                                      <Button
+                                        size='sm'
+                                        onClick={() => saveAnswer(question.id)}
+                                        className='gap-1'
                                       >
-                                        <div className='max-h-40 overflow-y-auto prose prose-sm dark:prose-invert'>
-                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                            {question.answer}
-                                          </ReactMarkdown>
-                                        </div>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  ) : (
-                                    <span className='text-muted-foreground italic'>
-                                      No answer generated yet
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={question.status === 'approved' ? 'default' : 'secondary'}
-                                className='gap-1'
-                              >
-                                {question.status === 'approved' ? (
-                                  <CheckCircle className='w-3 h-3' />
+                                        <Save className='w-3 h-3' />
+                                        Save
+                                      </Button>
+                                      <Button
+                                        size='sm'
+                                        variant='outline'
+                                        onClick={cancelEditing}
+                                        className='gap-1'
+                                      >
+                                        <X className='w-3 h-3' />
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
                                 ) : (
-                                  <XCircle className='w-3 h-3' />
+                                  <div className='text-sm pr-4 py-2'>
+                                    {question.answer ? (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className='line-clamp-2 leading-relaxed whitespace-normal break-words markdown-content cursor-help'>
+                                            <ReactMarkdown
+                                              remarkPlugins={[remarkGfm]}
+                                              components={{
+                                                p: ({ children }) => (
+                                                  <span className='inline'>{children}</span>
+                                                ),
+                                                strong: ({ children }) => (
+                                                  <strong className='font-semibold'>
+                                                    {children}
+                                                  </strong>
+                                                ),
+                                                em: ({ children }) => (
+                                                  <em className='italic'>{children}</em>
+                                                ),
+                                                code: ({ children }) => (
+                                                  <code className='bg-muted px-1 py-0.5 rounded text-xs font-mono'>
+                                                    {children}
+                                                  </code>
+                                                ),
+                                                ul: ({ children }) => (
+                                                  <span className='inline'>{children}</span>
+                                                ),
+                                                ol: ({ children }) => (
+                                                  <span className='inline'>{children}</span>
+                                                ),
+                                                li: ({ children }) => (
+                                                  <span className='inline'>{children} </span>
+                                                ),
+                                                h1: ({ children }) => (
+                                                  <span className='font-semibold'>{children}</span>
+                                                ),
+                                                h2: ({ children }) => (
+                                                  <span className='font-semibold'>{children}</span>
+                                                ),
+                                                h3: ({ children }) => (
+                                                  <span className='font-semibold'>{children}</span>
+                                                ),
+                                                h4: ({ children }) => (
+                                                  <span className='font-semibold'>{children}</span>
+                                                ),
+                                                h5: ({ children }) => (
+                                                  <span className='font-semibold'>{children}</span>
+                                                ),
+                                                h6: ({ children }) => (
+                                                  <span className='font-semibold'>{children}</span>
+                                                ),
+                                                br: () => <span> </span>,
+                                              }}
+                                            >
+                                              {question.answer}
+                                            </ReactMarkdown>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                          className='max-w-md p-3 text-sm whitespace-normal break-words'
+                                          side='top'
+                                        >
+                                          <div className='max-h-40 overflow-y-auto prose prose-sm dark:prose-invert'>
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                              {question.answer}
+                                            </ReactMarkdown>
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    ) : (
+                                      <span className='text-muted-foreground italic'>
+                                        No answer generated yet
+                                      </span>
+                                    )}
+                                  </div>
                                 )}
-                                <span className='hidden lg:inline'>{question.status}</span>
-                              </Badge>
-                            </TableCell>
-                            <TableCell className='text-right'>
-                              <div className='flex items-center justify-end gap-1'>
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  onClick={() => startEditing(question)}
-                                  disabled={editingQuestionId === question.id}
-                                  title='Edit answer'
-                                >
-                                  <Edit className='w-4 h-4' />
-                                </Button>
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  onClick={() => toggleApproval(question.id, question.status)}
-                                  title={question.status === 'approved' ? 'Unapprove' : 'Approve'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={question.status === 'approved' ? 'default' : 'secondary'}
+                                  className='gap-1'
                                 >
                                   {question.status === 'approved' ? (
-                                    <XCircle className='w-4 h-4' />
+                                    <CheckCircle className='w-3 h-3' />
                                   ) : (
-                                    <CheckCircle className='w-4 h-4' />
+                                    <XCircle className='w-3 h-3' />
                                   )}
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                                  <span className='hidden lg:inline'>{question.status}</span>
+                                </Badge>
+                              </TableCell>
+                              <TableCell className='text-right'>
+                                <div className='flex items-center justify-end gap-1'>
+                                  <Button
+                                    variant='outline'
+                                    size='sm'
+                                    onClick={() => startEditing(question)}
+                                    disabled={editingQuestionId === question.id}
+                                    title='Edit answer'
+                                  >
+                                    <Edit className='w-4 h-4' />
+                                  </Button>
+                                  <Button
+                                    variant='outline'
+                                    size='sm'
+                                    onClick={() => toggleApproval(question.id, question.status)}
+                                    title={question.status === 'approved' ? 'Unapprove' : 'Approve'}
+                                  >
+                                    {question.status === 'approved' ? (
+                                      <XCircle className='w-4 h-4' />
+                                    ) : (
+                                      <CheckCircle className='w-4 h-4' />
+                                    )}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
