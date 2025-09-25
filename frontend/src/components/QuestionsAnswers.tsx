@@ -28,10 +28,10 @@ import {
   Plus,
   Save,
   Search,
+  Sparkles,
   Trash2,
   X,
   XCircle,
-  Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -750,7 +750,7 @@ export default function QuestionsAnswers({ onCountChange }: QuestionsAnswersProp
                         </>
                       ) : (
                         <>
-                          <Zap className='w-4 h-4' />
+                          <Sparkles className='w-4 h-4' />
                           Generate AI Answers
                         </>
                       )}

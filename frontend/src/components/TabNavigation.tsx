@@ -1,5 +1,3 @@
-import { FileText, HelpCircle } from 'lucide-react';
-
 type TabType = 'knowledge-base' | 'questions-answers';
 
 interface TabNavigationProps {
@@ -26,7 +24,6 @@ const TabNavigation = ({
         }`}
       >
         <span className='flex items-center gap-2'>
-          <FileText className='w-4 h-4' />
           <span>
             Knowledge Base{' '}
             <span
@@ -46,7 +43,6 @@ const TabNavigation = ({
         }`}
       >
         <span className='flex items-center gap-2'>
-          <HelpCircle className='w-4 h-4' />
           <span>
             Question & Answers{' '}
             <span
