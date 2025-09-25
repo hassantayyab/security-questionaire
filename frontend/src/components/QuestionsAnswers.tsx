@@ -1,12 +1,14 @@
 'use client';
 
+import AppButton from '@/components/AppButton';
 import DataTable, {
   createBadgeCell,
   createTextCell,
   DataTableAction,
   DataTableColumn,
 } from '@/components/DataTable';
-import FileUpload from '@/components/FileUpload';
+import SearchField from '@/components/SearchField';
+import { ExcelUploadDialog } from '@/components/dialogs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,9 +25,10 @@ import {
   FileSpreadsheet,
   HelpCircle,
   Loader2,
+  Plus,
   Save,
+  Search,
   Trash2,
-  Upload,
   X,
   XCircle,
   Zap,
@@ -50,6 +53,7 @@ export default function QuestionsAnswers() {
     total: number;
     completed: number;
   } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const isGeneratingRef = useRef(false);
 
   // Keep ref in sync with state
@@ -424,8 +428,19 @@ export default function QuestionsAnswers() {
     });
   };
 
-  const approvedCount = questions.filter((q) => q.status === 'approved').length;
-  const unapprovedCount = questions.filter((q) => q.status === 'unapproved').length;
+  // Filter questions based on search term (search in both question text and answer)
+  const filteredQuestions = questions.filter((question) => {
+    if (!searchTerm.trim()) return true;
+
+    const searchLower = searchTerm.toLowerCase();
+    const questionMatch = question.question_text.toLowerCase().includes(searchLower);
+    const answerMatch = question.answer?.toLowerCase().includes(searchLower) || false;
+
+    return questionMatch || answerMatch;
+  });
+
+  const approvedCount = filteredQuestions.filter((q) => q.status === 'approved').length;
+  const unapprovedCount = filteredQuestions.filter((q) => q.status === 'unapproved').length;
 
   // DataTable column configurations
   const columns: DataTableColumn<Question>[] = [
@@ -580,37 +595,23 @@ export default function QuestionsAnswers() {
   return (
     <TooltipProvider delayDuration={500}>
       <div className='space-y-6'>
-        {/* Upload Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Upload className='w-5 h-5' />
-              Upload Questionnaire
-            </CardTitle>
-            <CardDescription>
-              Upload Excel files containing your security questionnaires. Questions will be parsed
-              automatically.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FileUpload
-              accept='.xlsx,.xls'
-              maxSize={appConfig.maxFileSize}
-              onUpload={handleExcelUpload}
-              isUploading={isUploading}
-              allowedTypes={appConfig.allowedFileTypes.excel}
-            />
-            {isUploading && (
-              <div className='mt-4 space-y-2'>
-                <div className='flex items-center gap-2 text-sm text-gray-500'>
-                  <Loader2 className='w-4 h-4 animate-spin' />
-                  Processing Excel file with openpyxl...
-                </div>
-                <Progress value={undefined} className='w-full' />
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Search and Upload Section */}
+        <div className='flex items-center justify-between w-full'>
+          <div className='max-w-md'>
+            <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
+          </div>
+          <ExcelUploadDialog
+            onUploadSuccess={async () => {
+              // Reload questionnaires after Excel upload
+              await loadQuestionnaires();
+            }}
+          >
+            <AppButton variant='primary'>
+              <Plus className='h-4 w-4 mr-2' />
+              Add Questionnaire
+            </AppButton>
+          </ExcelUploadDialog>
+        </div>
 
         {/* Questionnaire Selection */}
         {questionnaires.length > 0 && (
@@ -677,7 +678,11 @@ export default function QuestionsAnswers() {
                   <CardTitle className='flex items-center gap-2'>
                     <HelpCircle className='w-5 h-5' />
                     Questions & Answers
-                    <Badge variant='outline'>{questions.length} total</Badge>
+                    <Badge variant='outline'>
+                      {searchTerm
+                        ? `${filteredQuestions.length}/${questions.length}`
+                        : `${questions.length} total`}
+                    </Badge>
                   </CardTitle>
                   <CardDescription>
                     Review, edit, and approve AI-generated answers for your questionnaire.
@@ -706,6 +711,16 @@ export default function QuestionsAnswers() {
                   <div className='text-lg font-medium text-gray-500'>No questions found</div>
                   <div className='text-sm text-gray-500'>
                     Upload an Excel questionnaire to get started
+                  </div>
+                </div>
+              ) : filteredQuestions.length === 0 && searchTerm ? (
+                <div className='text-center py-8 space-y-3'>
+                  <Search className='w-12 h-12 text-gray-500 mx-auto' />
+                  <div className='text-lg font-medium text-gray-500'>
+                    No questions match your search
+                  </div>
+                  <div className='text-sm text-gray-500'>
+                    Try adjusting your search term or clear the search to see all questions
                   </div>
                 </div>
               ) : (
@@ -784,7 +799,7 @@ export default function QuestionsAnswers() {
 
                   {/* Questions Table */}
                   <DataTable
-                    data={questions}
+                    data={filteredQuestions}
                     columns={columns}
                     actions={getActionsForQuestion}
                     showCheckboxes={true}
@@ -792,7 +807,7 @@ export default function QuestionsAnswers() {
                     onRowSelect={toggleQuestionSelection}
                     onSelectAll={(selected) => {
                       if (selected) {
-                        setSelectedQuestions(new Set(questions.map((q) => q.id)));
+                        setSelectedQuestions(new Set(filteredQuestions.map((q) => q.id)));
                       } else {
                         setSelectedQuestions(new Set());
                       }

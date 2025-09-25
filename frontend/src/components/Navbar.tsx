@@ -7,7 +7,7 @@ import Link from 'next/link';
  */
 const Navbar = () => {
   return (
-    <nav className='bg-neutral-50 border-b border-gray-200'>
+    <nav className='bg-zinc-50 border-b border-gray-200'>
       <div className='px-6 py-2'>
         <div className='flex items-center justify-between h-8'>
           {/* Logo on the left */}

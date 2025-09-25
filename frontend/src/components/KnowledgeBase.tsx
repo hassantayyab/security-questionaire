@@ -1,13 +1,13 @@
 'use client';
 
+import AppButton from '@/components/AppButton';
 import DataTable, {
   createBadgeCell,
   DataTableAction,
   DataTableColumn,
 } from '@/components/DataTable';
-import { Badge } from '@/components/ui/badge';
+import SearchField from '@/components/SearchField';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { UploadDialog } from '@/components/UploadDialog';
 import { api, ApiError } from '@/lib/api';
 import { Policy } from '@/types';
 import {
@@ -25,6 +26,7 @@ import {
   Eye,
   FileText,
   Loader2,
+  Plus,
   Search,
   Trash2,
 } from 'lucide-react';
@@ -171,7 +173,6 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, {}>((props, ref) => {
     {
       key: 'name',
       header: 'Policy Name',
-      className: 'font-medium',
       render: (policy: Policy) => (
         <div className='flex items-center gap-2'>
           <FileText className='w-4 h-4 text-gray-500' />
@@ -237,57 +238,66 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, {}>((props, ref) => {
     },
   ];
 
+  // Filter policies based on search term
+  const filteredPolicies = policies.filter((policy) =>
+    policy.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
   return (
     <div className='space-y-6'>
+      {/* Search and Upload Section */}
+      <div className='flex items-center justify-between w-full'>
+        <div className='max-w-md'>
+          <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
+        </div>
+        <UploadDialog
+          onUploadSuccess={() => {
+            handleUploadSuccess();
+          }}
+        >
+          <AppButton variant='primary'>
+            <Plus className='h-4 w-4 mr-2' />
+            Add Document
+          </AppButton>
+        </UploadDialog>
+      </div>
+
       {/* Policies List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <FileText className='w-5 h-5' />
-            Uploaded Policies
-            {policies.length > 0 && (
-              <Badge variant='secondary' className='ml-2'>
-                {policies.length}
-              </Badge>
-            )}
-          </CardTitle>
-          <CardDescription>
-            Manage your uploaded policy documents and view extraction status.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className='flex items-center justify-center py-8'>
-              <Loader2 className='w-6 h-6 animate-spin mr-2' />
-              Loading policies...
-            </div>
-          ) : policies.length === 0 ? (
+      {isLoading ? (
+        <div className='flex items-center justify-center py-8'>
+          <Loader2 className='w-6 h-6 animate-spin mr-2' />
+          Loading documents...
+        </div>
+      ) : policies.length === 0 ? (
+        <div className='text-center py-8 space-y-3'>
+          <FileText className='w-12 h-12 text-gray-500 mx-auto' />
+          <div className='text-base font-medium text-gray-500'>No documents uploaded</div>
+          <div className='text-sm text-gray-500'>Upload your first PDF document to get started</div>
+        </div>
+      ) : filteredPolicies.length === 0 ? (
+        <div className='text-center py-8 space-y-3'>
+          <div className='text-base font-medium text-gray-500'>No documents match your search</div>
+          <div className='text-sm text-gray-500'>
+            Try adjusting your search term or clear the search to see all documents
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          data={filteredPolicies}
+          columns={columns}
+          actions={actions}
+          getRowId={(policy) => policy.id}
+          emptyState={
             <div className='text-center py-8 space-y-3'>
               <FileText className='w-12 h-12 text-gray-500 mx-auto' />
-              <div className='text-lg font-medium text-gray-500'>No policies uploaded yet</div>
+              <div className='text-base font-medium text-gray-500'>No documents uploaded</div>
               <div className='text-sm text-gray-500'>
-                Upload your first PDF policy document to get started
+                Upload your first PDF document to get started
               </div>
             </div>
-          ) : (
-            <DataTable
-              data={policies}
-              columns={columns}
-              actions={actions}
-              getRowId={(policy) => policy.id}
-              emptyState={
-                <div className='text-center py-8 space-y-3'>
-                  <FileText className='w-12 h-12 text-gray-500 mx-auto' />
-                  <div className='text-lg font-medium text-gray-500'>No policies uploaded yet</div>
-                  <div className='text-sm text-gray-500'>
-                    Upload your first PDF policy document to get started
-                  </div>
-                </div>
-              }
-            />
-          )}
-        </CardContent>
-      </Card>
+          }
+        />
+      )}
 
       {/* Policy Preview Modal */}
       {viewingPolicy && (

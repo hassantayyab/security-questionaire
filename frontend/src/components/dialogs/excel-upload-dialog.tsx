@@ -11,17 +11,17 @@ import {
 import { Label } from '@/components/ui/label';
 import { appConfig } from '@/config/app';
 import { api, ApiError } from '@/lib/api';
-import { AlertCircle, FileText } from 'lucide-react';
+import { AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from './ui/button';
+import { Button } from '../ui/button';
 
-interface UploadDialogProps {
+interface ExcelUploadDialogProps {
   children: React.ReactNode;
   onUploadSuccess?: () => void;
 }
 
-export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) => {
+export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDialogProps) => {
   const [open, setOpen] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState('');
@@ -29,8 +29,11 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
   const [error, setError] = useState<string | null>(null);
 
   const validateFile = (file: File): string | null => {
-    if (!file.type.includes('pdf')) {
-      return 'Please upload a PDF file';
+    const allowedExtensions = ['.xlsx', '.xls'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+
+    if (!allowedExtensions.includes(fileExtension)) {
+      return 'Please upload an Excel file (.xlsx or .xls)';
     }
     if (file.size > appConfig.maxFileSize) {
       return `File size must be less than ${appConfig.maxFileSize / 1024 / 1024}MB`;
@@ -95,10 +98,10 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
     setError(null);
 
     try {
-      const response = await api.uploadPdf(uploadedFile);
+      const response = await api.uploadExcel(uploadedFile);
 
       if (response.success) {
-        toast.success(response.message || 'Policy uploaded successfully');
+        toast.success(response.message || 'Questionnaire uploaded successfully');
         onUploadSuccess?.();
         setOpen(false);
         resetForm();
@@ -106,11 +109,11 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
         setError(response.message || 'Upload failed');
       }
     } catch (error) {
-      console.error('PDF upload error:', error);
+      console.error('Excel upload error:', error);
       if (error instanceof ApiError) {
         setError(error.message);
       } else {
-        setError('Failed to upload PDF. Please try again.');
+        setError('Failed to upload Excel file. Please try again.');
       }
     } finally {
       setIsUploading(false);
@@ -131,7 +134,9 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
       <DialogContent className='bg-white max-w-lg w-full rounded-lg shadow-2xl border-0'>
         {/* Header */}
         <DialogHeader className='flex flex-row items-center justify-between border-b border-gray-200 px-6 py-4 space-y-0'>
-          <DialogTitle className='text-base font-medium text-gray-900'>Add resource</DialogTitle>
+          <DialogTitle className='text-base font-medium text-gray-900'>
+            Add Questionnaire
+          </DialogTitle>
         </DialogHeader>
 
         {/* Content */}
@@ -139,21 +144,21 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
           {/* Document Upload Section */}
           <div className='flex flex-col gap-1 w-full'>
             <div className='flex gap-1 items-center'>
-              <Label className='text-xs font-medium text-gray-700'>Document</Label>
+              <Label className='text-xs font-medium text-gray-700'>Excel File</Label>
             </div>
 
             <div
               className={`bg-gray-50 border-2 border-dashed rounded-lg flex flex-col gap-2 h-[120px] items-center justify-center px-6 py-8 w-full cursor-pointer hover:bg-gray-100 transition-colors ${
                 error ? 'border-red-300 bg-red-50' : 'border-gray-300'
               } ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
-              onClick={() => !isUploading && document.getElementById('file-upload')?.click()}
+              onClick={() => !isUploading && document.getElementById('excel-file-upload')?.click()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => !isUploading && handleDrop(e)}
             >
               {uploadedFile ? (
                 <div className='flex flex-col items-center gap-3'>
                   <div className='flex gap-3 items-center'>
-                    <FileText className='h-5 w-5 text-gray-500' />
+                    <FileSpreadsheet className='h-5 w-5 text-gray-500' />
                     <div className='text-sm font-medium text-gray-700 truncate max-w-[250px]'>
                       {uploadedFile.name}
                     </div>
@@ -164,7 +169,7 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
                       size='sm'
                       onClick={(e) => {
                         e.stopPropagation();
-                        !isUploading && document.getElementById('file-upload')?.click();
+                        !isUploading && document.getElementById('excel-file-upload')?.click();
                       }}
                       disabled={isUploading}
                       className='hover:bg-white'
@@ -190,15 +195,15 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
                     <span className='text-violet-600'>Upload</span> or drag and drop
                   </span>
                   <span className='text-xs text-gray-500'>
-                    PDF up to {appConfig.maxFileSize / 1024 / 1024}MB
+                    Excel files (.xlsx, .xls) up to {appConfig.maxFileSize / 1024 / 1024}MB
                   </span>
                 </div>
               )}
 
               <input
-                id='file-upload'
+                id='excel-file-upload'
                 type='file'
-                accept='.pdf'
+                accept='.xlsx,.xls'
                 onChange={handleFileUpload}
                 disabled={isUploading}
                 className='hidden'
@@ -211,6 +216,14 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
             <div className='flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md'>
               <AlertCircle className='w-4 h-4 text-red-500 flex-shrink-0' />
               <span className='text-sm text-red-700'>{error}</span>
+            </div>
+          )}
+
+          {/* Upload Progress */}
+          {isUploading && (
+            <div className='flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md'>
+              <div className='w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin' />
+              <span className='text-sm text-blue-700'>Uploading and processing Excel file...</span>
             </div>
           )}
         </div>

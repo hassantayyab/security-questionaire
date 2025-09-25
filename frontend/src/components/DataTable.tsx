@@ -133,7 +133,7 @@ export default function DataTable<T = any>({
                   {column.header}
                 </TableHead>
               ))}
-              {hasActions && <TableHead className='text-right'>Actions</TableHead>}
+              {hasActions && <TableHead className='text-right'></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>

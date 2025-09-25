@@ -1,21 +1,12 @@
 'use client';
 
-import {
-  AppButton,
-  KnowledgeBase,
-  QuestionsAnswers,
-  SearchField,
-  TabNavigation,
-  UploadDialog,
-} from '@/components';
-import { Plus } from 'lucide-react';
+import { KnowledgeBase, QuestionsAnswers, TabNavigation } from '@/components';
 import { useRef, useState } from 'react';
 
 type TabType = 'knowledge-base' | 'questions-answers';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('knowledge-base');
-  const [searchTerm, setSearchTerm] = useState('');
   const knowledgeBaseRef = useRef<any>(null);
 
   // Mock counts - in real app these would come from API/state
@@ -28,11 +19,13 @@ export default function Home() {
       <div className='space-y-6'>
         {/* Frameworks/Tabs Section */}
         <div className='space-y-4'>
-          <h2 className='text-lg font-semibold text-gray-900 mb-2'>Security Questionnaire</h2>
-          <p className='text-sm text-gray-500 mt-2 mb-8'>
-            Upload your security policies and questionnaires to automatically generate AI-powered
-            answers using advanced document analysis.
-          </p>
+          <div className='space-y-1 mb-8 max-w-lg'>
+            <h2 className='text-md font-semibold text-gray-900'>Security Questionnaire</h2>
+            <p className='text-sm text-gray-500'>
+              Upload your security policies and questionnaires to automatically generate AI-powered
+              answers using advanced document analysis.
+            </p>
+          </div>
 
           {/* Tab Navigation */}
           <TabNavigation
@@ -41,31 +34,12 @@ export default function Home() {
             knowledgeBaseCount={knowledgeBaseCount}
             questionsCount={questionsCount}
           />
-
-          {/* Search Bar and Upload Dialog */}
-          <div className='flex items-center justify-between w-full'>
-            <div className='max-w-md'>
-              <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
-            </div>
-            <UploadDialog
-              onUploadSuccess={() => {
-                knowledgeBaseRef.current?.handleUploadSuccess();
-              }}
-            >
-              <AppButton variant='primary'>
-                <Plus className='h-4 w-4 mr-2' />
-                Add Resource
-              </AppButton>
-            </UploadDialog>
-          </div>
         </div>
       </div>
 
       {/* Tab Content */}
-      <div className='space-y-6'>
-        {activeTab === 'knowledge-base' && <KnowledgeBase ref={knowledgeBaseRef} />}
-        {activeTab === 'questions-answers' && <QuestionsAnswers />}
-      </div>
+      {activeTab === 'knowledge-base' && <KnowledgeBase ref={knowledgeBaseRef} />}
+      {activeTab === 'questions-answers' && <QuestionsAnswers />}
     </div>
   );
 }
