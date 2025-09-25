@@ -1,7 +1,7 @@
 export { default as AppButton } from './AppButton';
 export { default as DataTable } from './DataTable';
 export { default as FileUpload } from './FileUpload';
-export { default as KnowledgeBase } from './KnowledgeBase';
+export { default as KnowledgeBase, type KnowledgeBaseRef } from './KnowledgeBase';
 export { default as Navbar } from './Navbar';
 export { default as QuestionsAnswers } from './QuestionsAnswers';
 export { default as SearchField } from './SearchField';

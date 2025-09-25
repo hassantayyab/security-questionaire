@@ -38,7 +38,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 
-export default function QuestionsAnswers() {
+interface QuestionsAnswersProps {
+  onCountChange?: (count: number) => void;
+}
+
+export default function QuestionsAnswers({ onCountChange }: QuestionsAnswersProps) {
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<Questionnaire | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -68,8 +72,15 @@ export default function QuestionsAnswers() {
   useEffect(() => {
     if (selectedQuestionnaire) {
       loadQuestions(selectedQuestionnaire.id);
+    } else {
+      setQuestions([]);
     }
   }, [selectedQuestionnaire]);
+
+  // Notify parent component when questions count changes
+  useEffect(() => {
+    onCountChange?.(questions.length);
+  }, [questions.length, onCountChange]);
 
   // Cleanup polling interval on unmount or questionnaire change
   useEffect(() => {
@@ -597,7 +608,7 @@ export default function QuestionsAnswers() {
       <div className='space-y-6'>
         {/* Search and Upload Section */}
         <div className='flex items-center justify-between w-full'>
-          <div className='max-w-md'>
+          <div className='w-64'>
             <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
           </div>
           <ExcelUploadDialog

@@ -19,17 +19,7 @@ import { Input } from '@/components/ui/input';
 import { UploadDialog } from '@/components/UploadDialog';
 import { api, ApiError } from '@/lib/api';
 import { Policy } from '@/types';
-import {
-  AlertCircle,
-  CheckCircle,
-  Copy,
-  Eye,
-  FileText,
-  Loader2,
-  Plus,
-  Search,
-  Trash2,
-} from 'lucide-react';
+import { Copy, Eye, FileText, Loader2, Plus, Search, Trash2 } from 'lucide-react';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -37,7 +27,11 @@ export interface KnowledgeBaseRef {
   handleUploadSuccess: () => void;
 }
 
-const KnowledgeBase = forwardRef<KnowledgeBaseRef, {}>((props, ref) => {
+interface KnowledgeBaseProps {
+  onCountChange?: (count: number) => void;
+}
+
+const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCountChange }, ref) => {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [, setSelectedPolicy] = useState<Policy | null>(null);
@@ -48,6 +42,11 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, {}>((props, ref) => {
   useEffect(() => {
     loadPolicies();
   }, []);
+
+  // Notify parent component when policies count changes
+  useEffect(() => {
+    onCountChange?.(policies.length);
+  }, [policies.length, onCountChange]);
 
   const loadPolicies = async () => {
     try {
@@ -194,21 +193,12 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, {}>((props, ref) => {
       key: 'extracted_text',
       header: 'Status',
       render: createBadgeCell((policy: Policy) => ({
-        className: `gap-1 ${
+        className: `gap-1 font-normal border ${
           policy.extracted_text
-            ? 'bg-violet-600 text-white border-violet-600'
-            : 'bg-secondary text-secondary-foreground border-secondary'
+            ? 'bg-green-100 text-green-800 border-green-200'
+            : 'bg-gray-100 text-gray-600 border-gray-200'
         }`,
-        children: (
-          <>
-            {policy.extracted_text ? (
-              <CheckCircle className='w-3 h-3' />
-            ) : (
-              <AlertCircle className='w-3 h-3' />
-            )}
-            {policy.extracted_text ? 'Processed' : 'Processing'}
-          </>
-        ),
+        children: <>{policy.extracted_text ? 'Processed' : 'Processing'}</>,
       })),
     },
   ];
@@ -247,7 +237,7 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, {}>((props, ref) => {
     <div className='space-y-6'>
       {/* Search and Upload Section */}
       <div className='flex items-center justify-between w-full'>
-        <div className='max-w-md'>
+        <div className='w-64'>
           <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
         </div>
         <UploadDialog

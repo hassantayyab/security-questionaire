@@ -8,10 +8,8 @@ type TabType = 'knowledge-base' | 'questions-answers';
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('knowledge-base');
   const knowledgeBaseRef = useRef<any>(null);
-
-  // Mock counts - in real app these would come from API/state
-  const knowledgeBaseCount = 4; // Number of uploaded policies
-  const questionsCount = 9; // Number of questions
+  const [knowledgeBaseCount, setKnowledgeBaseCount] = useState(0);
+  const [questionsCount, setQuestionsCount] = useState(0);
 
   return (
     <div className='max-w-7xl mx-auto space-y-8 p-6'>
@@ -38,8 +36,10 @@ export default function Home() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'knowledge-base' && <KnowledgeBase ref={knowledgeBaseRef} />}
-      {activeTab === 'questions-answers' && <QuestionsAnswers />}
+      {activeTab === 'knowledge-base' && (
+        <KnowledgeBase ref={knowledgeBaseRef} onCountChange={setKnowledgeBaseCount} />
+      )}
+      {activeTab === 'questions-answers' && <QuestionsAnswers onCountChange={setQuestionsCount} />}
     </div>
   );
 }
