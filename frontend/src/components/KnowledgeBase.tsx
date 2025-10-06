@@ -1,11 +1,6 @@
 'use client';
 
-import AppButton from '@/components/AppButton';
-import DataTable, {
-  createBadgeCell,
-  DataTableAction,
-  DataTableColumn,
-} from '@/components/DataTable';
+import KnowledgeBaseTable from '@/components/KnowledgeBaseTable';
 import SearchField from '@/components/SearchField';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { UploadDialog } from '@/components/UploadDialog';
 import { api, ApiError } from '@/lib/api';
 import { Policy } from '@/types';
-import { Copy, Eye, FileText, Loader2, Plus, Search, Trash2 } from 'lucide-react';
+import { Copy, FileText, Loader2, Plus, Search } from 'lucide-react';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -34,7 +29,7 @@ interface KnowledgeBaseProps {
 const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCountChange }, ref) => {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [, setSelectedPolicy] = useState<Policy | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [viewingPolicy, setViewingPolicy] = useState<Policy | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -93,6 +88,24 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleRowSelect = (id: string) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedRows(new Set(filteredPolicies.map((p) => p.id)));
+    } else {
+      setSelectedRows(new Set());
+    }
   };
 
   const handleDeletePolicy = async (policy: Policy) => {
@@ -167,76 +180,15 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
     return snippets.join('\n\n---\n\n');
   };
 
-  // DataTable column configurations
-  const columns: DataTableColumn<Policy>[] = [
-    {
-      key: 'name',
-      header: 'Policy Name',
-      render: (policy: Policy) => (
-        <div className='flex items-center gap-2'>
-          <FileText className='w-4 h-4 text-gray-500' />
-          {policy.name}
-        </div>
-      ),
-    },
-    {
-      key: 'upload_date',
-      header: 'Upload Date',
-      render: (policy: Policy) => formatDate(policy.upload_date),
-    },
-    {
-      key: 'file_size',
-      header: 'File Size',
-      render: (policy: Policy) => formatFileSize(policy.file_size),
-    },
-    {
-      key: 'extracted_text',
-      header: 'Status',
-      render: createBadgeCell((policy: Policy) => ({
-        className: `gap-1 font-normal border ${
-          policy.extracted_text
-            ? 'bg-green-100 text-green-800 border-green-200'
-            : 'bg-gray-100 text-gray-600 border-gray-200'
-        }`,
-        children: <>{policy.extracted_text ? 'Processed' : 'Processing'}</>,
-      })),
-    },
-  ];
-
-  // DataTable action configurations
-  const actions: DataTableAction<Policy>[] = [
-    {
-      label: 'View content',
-      icon: Eye,
-      onClick: (policy: Policy) => {
-        setViewingPolicy(policy);
-        setSearchTerm('');
-      },
-      disabled: (policy: Policy) => !policy.extracted_text,
-      title: (policy: Policy) =>
-        policy.extracted_text ? 'View extracted content' : 'Content not yet extracted',
-      variant: 'outline',
-      className:
-        'border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20',
-    },
-    {
-      label: 'Delete policy',
-      icon: Trash2,
-      onClick: handleDeletePolicy,
-      variant: 'outline',
-      className: 'text-red-500 hover:text-red-500',
-    },
-  ];
-
   // Filter policies based on search term
   const filteredPolicies = policies.filter((policy) =>
     policy.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-4'>
       {/* Search and Upload Section */}
-      <div className='flex items-center justify-between w-full'>
+      <div className='flex items-center justify-between w-full pt-4'>
         <div className='w-64'>
           <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
         </div>
@@ -245,10 +197,10 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
             handleUploadSuccess();
           }}
         >
-          <AppButton variant='primary'>
-            <Plus className='h-4 w-4 mr-2' />
-            Add Document
-          </AppButton>
+          <button className='bg-violet-600 border border-violet-600 text-white px-3 py-[7px] rounded text-xs font-medium hover:bg-violet-700 transition-colors flex items-center gap-1.5 cursor-pointer'>
+            <Plus className='h-4 w-4' />
+            Add resource
+          </button>
         </UploadDialog>
       </div>
 
@@ -272,20 +224,16 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
           </div>
         </div>
       ) : (
-        <DataTable
+        <KnowledgeBaseTable
           data={filteredPolicies}
-          columns={columns}
-          actions={actions}
-          getRowId={(policy) => policy.id}
-          emptyState={
-            <div className='text-center py-8 space-y-3'>
-              <FileText className='w-12 h-12 text-gray-500 mx-auto' />
-              <div className='text-base font-medium text-gray-500'>No documents uploaded</div>
-              <div className='text-sm text-gray-500'>
-                Upload your first PDF document to get started
-              </div>
-            </div>
-          }
+          selectedRows={selectedRows}
+          onRowSelect={handleRowSelect}
+          onSelectAll={handleSelectAll}
+          onView={(policy) => {
+            setViewingPolicy(policy);
+            setSearchTerm('');
+          }}
+          onDelete={handleDeletePolicy}
         />
       )}
 
@@ -320,7 +268,7 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
                 size='sm'
                 onClick={() => copyToClipboard(viewingPolicy?.extracted_text || '')}
                 disabled={!viewingPolicy?.extracted_text}
-                className='border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
+                className='border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20 transition-colors'
               >
                 <Copy className='w-4 h-4 mr-2' />
                 Copy All

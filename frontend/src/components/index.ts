@@ -1,9 +1,13 @@
+export { default as AnswersLibrary } from './AnswersLibrary';
 export { default as AppButton } from './AppButton';
 export { default as DataTable } from './DataTable';
 export { default as FileUpload } from './FileUpload';
 export { default as KnowledgeBase, type KnowledgeBaseRef } from './KnowledgeBase';
+export { default as KnowledgeBaseTable } from './KnowledgeBaseTable';
+export { default as KnowledgeBaseTabs } from './KnowledgeBaseTabs';
 export { default as Navbar } from './Navbar';
 export { default as QuestionsAnswers } from './QuestionsAnswers';
 export { default as SearchField } from './SearchField';
+export { SidebarNavigation, SidebarNavigationItem, SidebarNavigationSection } from './sidebar';
 export { default as TabNavigation } from './TabNavigation';
 export { UploadDialog } from './UploadDialog';

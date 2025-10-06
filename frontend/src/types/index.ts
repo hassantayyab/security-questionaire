@@ -7,6 +7,11 @@ export interface Policy {
   upload_date: string;
   created_at: string;
   updated_at: string;
+  owner?: {
+    name: string;
+    avatar?: string;
+  };
+  use_in_questionnaire?: boolean;
 }
 
 export interface Questionnaire {
@@ -92,3 +97,5 @@ export interface BulkOperationRequest {
   question_ids: string[];
   status: 'approved' | 'unapproved';
 }
+
+export type { NavigationItem, NavigationSection } from './navigation';
