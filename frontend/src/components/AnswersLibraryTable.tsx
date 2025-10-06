@@ -9,7 +9,7 @@ interface AnswersLibraryTableProps {
   selectedRows: Set<string>;
   onRowSelect: (id: string) => void;
   onSelectAll: (selected: boolean) => void;
-  onView: (answer: Answer) => void;
+  onEdit: (answer: Answer) => void;
   onDelete: (answer: Answer) => void;
 }
 
@@ -18,7 +18,7 @@ const AnswersLibraryTable = ({
   selectedRows,
   onRowSelect,
   onSelectAll,
-  onView,
+  onEdit,
   onDelete,
 }: AnswersLibraryTableProps) => {
   const formatDate = (dateString: string) => {
@@ -75,8 +75,8 @@ const AnswersLibraryTable = ({
 
   const actions: TableAction<Answer>[] = [
     {
-      label: 'View',
-      onClick: onView,
+      label: 'Edit',
+      onClick: onEdit,
     },
     {
       label: 'Delete',

@@ -3,13 +3,6 @@
 import AnswersLibraryTable from '@/components/AnswersLibraryTable';
 import SearchField from '@/components/SearchField';
 import { AddAnswerDialog } from '@/components/dialogs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { Answer } from '@/types';
 import { FileText, Import, Plus } from 'lucide-react';
@@ -23,9 +16,9 @@ interface AnswersLibraryProps {
 const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [viewingAnswer, setViewingAnswer] = useState<Answer | null>(null);
+  const [editingAnswer, setEditingAnswer] = useState<Answer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch answers from backend on mount
@@ -91,20 +84,37 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   };
 
   const handleAddAnswer = () => {
-    setIsAddDialogOpen(true);
+    setEditingAnswer(null);
+    setIsDialogOpen(true);
   };
 
-  const handleSaveAnswer = async (question: string, answer: string) => {
-    try {
-      const response = await api.createAnswer(question, answer);
+  const handleEditAnswer = (answer: Answer) => {
+    setEditingAnswer(answer);
+    setIsDialogOpen(true);
+  };
 
-      if (response.success && response.answer) {
-        setAnswers([response.answer, ...answers]);
-        toast.success('Answer added successfully');
+  const handleSaveAnswer = async (question: string, answer: string, answerId?: string) => {
+    try {
+      if (answerId) {
+        // Update existing answer
+        const response = await api.updateAnswerLibrary(answerId, question, answer);
+
+        if (response.success && response.answer) {
+          setAnswers(answers.map((a) => (a.id === answerId ? response.answer : a)));
+          toast.success('Answer updated successfully');
+        }
+      } else {
+        // Create new answer
+        const response = await api.createAnswer(question, answer);
+
+        if (response.success && response.answer) {
+          setAnswers([response.answer, ...answers]);
+          toast.success('Answer added successfully');
+        }
       }
     } catch (error) {
-      console.error('Error creating answer:', error);
-      toast.error('Failed to add answer');
+      console.error('Error saving answer:', error);
+      toast.error(answerId ? 'Failed to update answer' : 'Failed to add answer');
     }
   };
 
@@ -173,73 +183,18 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
           selectedRows={selectedRows}
           onRowSelect={handleRowSelect}
           onSelectAll={handleSelectAll}
-          onView={(answer) => setViewingAnswer(answer)}
+          onEdit={handleEditAnswer}
           onDelete={handleDeleteAnswer}
         />
       )}
 
-      {/* Add Answer Dialog */}
+      {/* Add/Edit Answer Dialog */}
       <AddAnswerDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
         onSave={handleSaveAnswer}
+        editAnswer={editingAnswer}
       />
-
-      {/* Answer Preview Dialog */}
-      {viewingAnswer && (
-        <Dialog open={!!viewingAnswer} onOpenChange={() => setViewingAnswer(null)}>
-          <DialogContent className='max-w-2xl'>
-            <DialogHeader>
-              <DialogTitle className='flex items-center gap-2'>
-                <FileText className='w-5 h-5' />
-                Answer Details
-              </DialogTitle>
-              <DialogDescription>View the complete answer and its details</DialogDescription>
-            </DialogHeader>
-
-            <div className='space-y-4 py-4'>
-              {/* Question */}
-              <div>
-                <label className='text-sm font-medium text-gray-900 block mb-2'>Question</label>
-                <div className='text-sm text-gray-700 bg-gray-50 p-3 rounded border border-gray-200'>
-                  {viewingAnswer.question}
-                </div>
-              </div>
-
-              {/* Answer */}
-              <div>
-                <label className='text-sm font-medium text-gray-900 block mb-2'>Answer</label>
-                <div className='text-sm text-gray-700 bg-gray-50 p-3 rounded border border-gray-200 whitespace-pre-wrap'>
-                  {viewingAnswer.answer}
-                </div>
-              </div>
-
-              {/* Source */}
-              <div>
-                <label className='text-sm font-medium text-gray-900 block mb-2'>Source</label>
-                <div className='text-sm text-gray-700'>
-                  {viewingAnswer.source_type === 'user' ? 'User: ' : 'Questionnaire: '}
-                  {viewingAnswer.source_name}
-                </div>
-              </div>
-
-              {/* Last Updated */}
-              <div>
-                <label className='text-sm font-medium text-gray-900 block mb-2'>Last Updated</label>
-                <div className='text-sm text-gray-700'>
-                  {new Date(viewingAnswer.updated_at).toLocaleString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };
