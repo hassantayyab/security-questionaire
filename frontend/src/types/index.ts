@@ -98,4 +98,17 @@ export interface BulkOperationRequest {
   status: 'approved' | 'unapproved';
 }
 
+export interface Answer {
+  id: string;
+  question: string;
+  answer: string;
+  source: {
+    type: 'user' | 'questionnaire';
+    name: string;
+  };
+  last_updated: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type { NavigationItem, NavigationSection } from './navigation';

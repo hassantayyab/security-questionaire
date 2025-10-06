@@ -21,7 +21,7 @@ export default function Home() {
   const knowledgeBaseRef = useRef<any>(null);
   const [knowledgeBaseCount, setKnowledgeBaseCount] = useState(0);
   const [questionsCount, setQuestionsCount] = useState(0);
-  const [answersLibraryCount] = useState(5); // Placeholder count
+  const [answersLibraryCount, setAnswersLibraryCount] = useState(0);
 
   // Define sidebar navigation structure
   const navigationSections: NavigationSection[] = [
@@ -100,7 +100,7 @@ export default function Home() {
                   <KnowledgeBase ref={knowledgeBaseRef} onCountChange={setKnowledgeBaseCount} />
                 </div>
                 <div className={activeKnowledgeBaseTab === 'answers-library' ? 'block' : 'hidden'}>
-                  <AnswersLibrary onCountChange={() => {}} />
+                  <AnswersLibrary onCountChange={setAnswersLibraryCount} />
                 </div>
               </div>
             </>
