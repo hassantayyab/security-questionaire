@@ -114,7 +114,7 @@ export const AddAnswerDialog = ({
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder=''
-            className='w-full border-gray-200 shadow-xs text-sm focus-visible:border-violet-600 focus-visible:ring-1 focus-visible:ring-violet-600 transition-all duration-200'
+            className='w-full shadow-xs text-sm focus-visible:border-violet-600 focus-visible:ring-1 focus-visible:ring-violet-600 transition-all duration-200'
           />
         </div>
 
@@ -128,7 +128,7 @@ export const AddAnswerDialog = ({
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder=''
-            className='w-full border-gray-200 shadow-xs text-sm min-h-[100px] resize-none focus-visible:border-violet-600 focus-visible:ring-1 focus-visible:ring-violet-600 transition-all duration-200'
+            className='w-full shadow-xs text-sm min-h-[100px] resize-none focus-visible:border-violet-600 focus-visible:ring-1 focus-visible:ring-violet-600 transition-all duration-200'
             rows={4}
           />
         </div>

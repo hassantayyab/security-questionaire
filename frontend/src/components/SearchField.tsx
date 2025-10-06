@@ -49,7 +49,7 @@ export const SearchField = ({
 
   return (
     <div className={`relative ${className}`}>
-      <div className='bg-white relative rounded border border-gray-200 shadow-xs focus-within:border-violet-600 focus-within:ring-1 focus-within:ring-violet-600 transition-all duration-200'>
+      <div className='bg-white relative rounded border border-gray-300 shadow-xs focus-within:border-violet-600 focus-within:ring-1 focus-within:ring-violet-600 transition-all duration-200'>
         <div className='flex items-center gap-2 px-3 py-2'>
           <SearchIcon className='shrink-0 size-3' />
           <input

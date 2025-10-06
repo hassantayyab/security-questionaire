@@ -4,6 +4,7 @@ import AIGenerationProgress from '@/components/AIGenerationProgress';
 import SearchField from '@/components/SearchField';
 import { Questionnaire } from '@/types';
 import { Clock, Download } from 'lucide-react';
+import Link from 'next/link';
 import { ReactNode } from 'react';
 
 interface QuestionnaireDetailViewProps {
@@ -43,12 +44,12 @@ const QuestionnaireDetailView = ({
       <div className='space-y-4'>
         {/* Breadcrumb and Title Section */}
         <div className='space-y-4'>
-          <button
-            onClick={onBack}
+          <Link
+            href='/questionnaire'
             className='text-xs font-medium text-gray-500 hover:text-violet-600 hover:underline transition-colors cursor-pointer underline-offset-2'
           >
             Questionnaires
-          </button>
+          </Link>
 
           {/* Title and Actions */}
           <div className='flex items-start justify-between'>

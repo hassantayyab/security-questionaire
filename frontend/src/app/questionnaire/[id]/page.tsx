@@ -1,0 +1,484 @@
+'use client';
+
+import { AppLayout } from '@/components';
+import QuestionnaireDetailView from '@/components/QuestionnaireDetailView';
+import QuestionsTable from '@/components/QuestionsTable';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { api, ApiError } from '@/lib/api';
+import { GenerateAnswersResponse, Question, Questionnaire } from '@/types';
+import {
+  CheckCircle,
+  Download,
+  HelpCircle,
+  Loader2,
+  Search,
+  Sparkles,
+  X,
+  XCircle,
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+
+export default function QuestionnaireDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editingAnswer, setEditingAnswer] = useState('');
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [generationProgress, setGenerationProgress] = useState<{
+    total: number;
+    completed: number;
+  } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const isGeneratingRef = useRef(false);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    isGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
+
+  useEffect(() => {
+    loadQuestionnaire();
+  }, [params.id]);
+
+  useEffect(() => {
+    if (questionnaire) {
+      loadQuestions(questionnaire.id);
+    }
+  }, [questionnaire]);
+
+  // Cleanup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
+
+  const loadQuestionnaire = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.getQuestionnaires();
+      if (response.success) {
+        const found = response.questionnaires?.find((q) => q.id === params.id);
+        if (found) {
+          setQuestionnaire(found);
+        } else {
+          toast.error('Questionnaire not found');
+          router.push('/questionnaire');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading questionnaire:', error);
+      toast.error('Failed to load questionnaire');
+      router.push('/questionnaire');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadQuestions = async (questionnaireId: string) => {
+    try {
+      const response = await api.getQuestions(questionnaireId);
+      if (response.success) {
+        const newQuestions = response.questions || [];
+        setQuestions(newQuestions);
+      }
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      toast.error('Failed to load questions');
+    }
+  };
+
+  const startPolling = (questionnaireId: string, totalQuestions: number) => {
+    // Stop any existing polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+
+    // Get current completed count
+    const currentCompleted = questions.filter(
+      (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
+    ).length;
+
+    setGenerationProgress({ total: totalQuestions, completed: currentCompleted });
+
+    const interval = setInterval(() => {
+      loadQuestions(questionnaireId);
+    }, 2000); // Poll every 2 seconds for faster updates
+
+    setPollingInterval(interval);
+
+    // Add a timeout to prevent infinite polling (max 10 minutes)
+    setTimeout(() => {
+      if (pollingInterval) {
+        stopPolling();
+        toast.warning('Answer generation timed out. Some answers may still be processing.');
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+  };
+
+  const stopPolling = useCallback(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+    setGenerationProgress(null);
+    setIsGenerating(false);
+  }, [pollingInterval]);
+
+  // Check for completion when questions change
+  useEffect(() => {
+    if (isGeneratingRef.current && questions.length > 0) {
+      const questionsWithAnswers = questions.filter(
+        (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
+      ).length;
+
+      // Update progress - only if it's actually different
+      setGenerationProgress((prev) => {
+        if (prev && prev.completed !== questionsWithAnswers) {
+          return { ...prev, completed: questionsWithAnswers };
+        }
+        return prev;
+      });
+
+      // Check if all questions have answers - if yes, stop polling
+      if (questionsWithAnswers === questions.length && questionsWithAnswers > 0) {
+        stopPolling();
+        toast.success(`All ${questionsWithAnswers} answers have been generated!`);
+      }
+    }
+  }, [questions, stopPolling]);
+
+  const handleGenerateAnswers = async () => {
+    if (!questionnaire) return;
+
+    setIsGenerating(true);
+    try {
+      const response: GenerateAnswersResponse = await api.generateAnswers(questionnaire.id);
+
+      if (response.success) {
+        if (response.status === 'processing') {
+          toast.success(response.message, {
+            description: 'Watch the progress below as answers are generated in real-time!',
+            duration: 5000,
+          });
+
+          // Start polling for real-time updates
+          const totalToGenerate = response.total_questions || questions.length;
+          startPolling(questionnaire.id, totalToGenerate);
+        } else {
+          // Immediate completion (shouldn't happen with current backend, but good fallback)
+          toast.success(`Generated answers for ${response.generated_count || 0} questions`);
+
+          if (response.errors && response.errors.length > 0) {
+            toast.warning(`${response.errors.length} questions had errors`);
+          }
+
+          // Reload questions to get the final state
+          await loadQuestions(questionnaire.id);
+          setIsGenerating(false);
+        }
+      } else {
+        toast.error('Failed to start answer generation');
+        setIsGenerating(false);
+      }
+    } catch (error) {
+      console.error('Generate answers error:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to start answer generation. Please try again.');
+      }
+      setIsGenerating(false);
+    }
+  };
+
+  const startEditing = (question: Question) => {
+    setEditingQuestionId(question.id);
+    setEditingAnswer(question.answer || '');
+  };
+
+  const saveAnswer = async (questionId: string) => {
+    try {
+      await api.updateAnswer(questionId, editingAnswer);
+      toast.success('Answer updated');
+
+      // Update local state
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === questionId ? { ...q, answer: editingAnswer, status: 'unapproved' as const } : q,
+        ),
+      );
+
+      setEditingQuestionId(null);
+      setEditingAnswer('');
+    } catch (error) {
+      console.error('Save answer error:', error);
+      toast.error('Failed to save answer');
+    }
+  };
+
+  const toggleApproval = async (questionId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'approved' ? 'unapproved' : 'approved';
+
+      if (newStatus === 'approved') {
+        await api.approveAnswer(questionId);
+      } else {
+        await api.updateAnswer(
+          questionId,
+          questions.find((q) => q.id === questionId)?.answer || '',
+          'unapproved',
+        );
+      }
+
+      // Update local state
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === questionId ? { ...q, status: newStatus as 'approved' | 'unapproved' } : q,
+        ),
+      );
+
+      toast.success(`Answer ${newStatus}`);
+    } catch (error) {
+      console.error('Toggle approval error:', error);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleExport = async () => {
+    if (!questionnaire) return;
+
+    try {
+      const response = await api.exportAnswers(questionnaire.id);
+
+      if (response.success && response.approved_questions) {
+        // Create downloadable file
+        const csvContent = [
+          ['Question', 'Answer'],
+          ...response.export_data.map((item: any) => [item.question, item.answer]),
+        ]
+          .map((row) => row.map((cell: any) => `'${cell.replace(/'/g, "''")}'`).join(','))
+          .join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${questionnaire.name}_answers.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        toast.success('Export completed');
+      } else {
+        toast.error('No approved answers found for export');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export answers');
+    }
+  };
+
+  const toggleQuestionSelection = (questionId: string) => {
+    const newSelection = new Set(selectedQuestions);
+    if (newSelection.has(questionId)) {
+      newSelection.delete(questionId);
+    } else {
+      newSelection.add(questionId);
+    }
+    setSelectedQuestions(newSelection);
+  };
+
+  const handleBackToList = () => {
+    router.push('/questionnaire');
+  };
+
+  const handleGenerateSingleAnswer = async (question: Question) => {
+    // Logic to generate AI answer for a single question
+    toast.info('Generating AI answer for this question...');
+    // TODO: Implement single question answer generation
+  };
+
+  const handleRegenerateAnswer = async (question: Question) => {
+    // Logic to regenerate AI answer for a question
+    toast.info('Regenerating AI answer...');
+    // TODO: Implement answer regeneration
+  };
+
+  // Filter questions based on search term (search in both question text and answer)
+  const filteredQuestions = questions.filter((question) => {
+    if (!searchTerm.trim()) return true;
+
+    const searchLower = searchTerm.toLowerCase();
+    const questionMatch = question.question_text.toLowerCase().includes(searchLower);
+    const answerMatch = question.answer?.toLowerCase().includes(searchLower) || false;
+
+    return questionMatch || answerMatch;
+  });
+
+  const approvedCount = filteredQuestions.filter((q) => q.status === 'approved').length;
+  const unapprovedCount = filteredQuestions.filter((q) => q.status === 'unapproved').length;
+
+  if (isLoading || !questionnaire) {
+    return (
+      <AppLayout>
+        <div className='flex items-center justify-center h-screen'>
+          <Loader2 className='w-8 h-8 animate-spin text-violet-600' />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <TooltipProvider delayDuration={500}>
+        <div className='p-6 space-y-6'>
+          <QuestionnaireDetailView
+            questionnaire={questionnaire}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onBack={handleBackToList}
+            onExport={handleExport}
+            approvedCount={approvedCount}
+            totalCount={questions.length}
+            isGenerating={isGenerating}
+            generationProgress={generationProgress}
+          >
+            {/* Questions Management */}
+            {
+              <Card>
+                <CardHeader>
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <CardTitle className='flex items-center gap-2'>
+                        <HelpCircle className='w-5 h-5' />
+                        Questions & Answers
+                        <Badge variant='outline'>
+                          {searchTerm
+                            ? `${filteredQuestions.length}/${questions.length}`
+                            : `${questions.length} total`}
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription>
+                        Review, edit, and approve AI-generated answers for your questionnaire.
+                      </CardDescription>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      {questions.length > 0 && (
+                        <div className='flex items-center gap-2 text-sm'>
+                          <Badge className='gap-1 bg-violet-600 text-white border-violet-600'>
+                            <CheckCircle className='w-3 h-3' />
+                            {approvedCount} approved
+                          </Badge>
+                          <Badge variant='secondary' className='gap-1'>
+                            <XCircle className='w-3 h-3' />
+                            {unapprovedCount} pending
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {questions.length === 0 ? (
+                    <div className='text-center py-8 space-y-3'>
+                      <HelpCircle className='w-12 h-12 text-gray-500 mx-auto' />
+                      <div className='text-lg font-medium text-gray-500'>No questions found</div>
+                      <div className='text-sm text-gray-500'>
+                        Upload an Excel questionnaire to get started
+                      </div>
+                    </div>
+                  ) : filteredQuestions.length === 0 && searchTerm ? (
+                    <div className='text-center py-8 space-y-3'>
+                      <Search className='w-12 h-12 text-gray-500 mx-auto' />
+                      <div className='text-lg font-medium text-gray-500'>
+                        No questions match your search
+                      </div>
+                      <div className='text-sm text-gray-500'>
+                        Try adjusting your search term or clear the search to see all questions
+                      </div>
+                    </div>
+                  ) : (
+                    <div className='space-y-4'>
+                      {/* Action Buttons */}
+                      <div className='flex items-center gap-2 flex-wrap'>
+                        <Button
+                          onClick={handleGenerateAnswers}
+                          disabled={isGenerating}
+                          className='gap-2 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20'
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className='w-4 h-4 animate-spin' />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className='w-4 h-4' />
+                              Generate AI Answers
+                            </>
+                          )}
+                        </Button>
+
+                        {isGenerating && (
+                          <Button
+                            variant='outline'
+                            onClick={stopPolling}
+                            className='gap-2 border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
+                          >
+                            <X className='w-4 h-4' />
+                            Stop Generation
+                          </Button>
+                        )}
+
+                        {approvedCount > 0 && (
+                          <Button
+                            variant='outline'
+                            onClick={handleExport}
+                            className='gap-2 ml-auto border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
+                          >
+                            <Download className='w-4 h-4' />
+                            Export Approved ({approvedCount})
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Questions Table */}
+                      <QuestionsTable
+                        data={filteredQuestions}
+                        selectedRows={selectedQuestions}
+                        onRowSelect={toggleQuestionSelection}
+                        onSelectAll={(selected) => {
+                          if (selected) {
+                            setSelectedQuestions(new Set(filteredQuestions.map((q) => q.id)));
+                          } else {
+                            setSelectedQuestions(new Set());
+                          }
+                        }}
+                        onEdit={startEditing}
+                        onApprove={(question) => toggleApproval(question.id, question.status)}
+                        onUnapprove={(question) => toggleApproval(question.id, question.status)}
+                        onGenerateAI={handleGenerateSingleAnswer}
+                        onRegenerateAI={handleRegenerateAnswer}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            }
+          </QuestionnaireDetailView>
+        </div>
+      </TooltipProvider>
+    </AppLayout>
+  );
+}

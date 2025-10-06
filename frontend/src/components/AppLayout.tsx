@@ -1,0 +1,63 @@
+'use client';
+
+import { SidebarNavigation } from '@/components';
+import { NavigationSection } from '@/types';
+import { FolderOpen, HelpCircle } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ReactNode } from 'react';
+
+type AppLayoutProps = {
+  children: ReactNode;
+};
+
+const AppLayout = ({ children }: AppLayoutProps) => {
+  const pathname = usePathname();
+
+  // Define sidebar navigation structure
+  const navigationSections: NavigationSection[] = [
+    {
+      heading: 'Security Questionnaire',
+      items: [
+        {
+          id: 'knowledge-base',
+          label: 'Knowledge base',
+          icon: FolderOpen,
+          href: '/knowledge-base',
+        },
+        {
+          id: 'questionnaire',
+          label: 'Questionnaires',
+          icon: HelpCircle,
+          href: '/questionnaire',
+        },
+      ],
+    },
+  ];
+
+  // Determine active item based on current pathname
+  const getActiveItemId = () => {
+    if (pathname.startsWith('/knowledge-base')) return 'knowledge-base';
+    if (pathname.startsWith('/questionnaire')) return 'questionnaire';
+    return '';
+  };
+
+  const activeItemId = getActiveItemId();
+
+  return (
+    <div className='flex h-full bg-gray-50'>
+      {/* Sidebar Navigation */}
+      <aside className='w-56 shrink-0 bg-white'>
+        <SidebarNavigation
+          sections={navigationSections}
+          activeItemId={activeItemId}
+          onItemClick={() => {}}
+        />
+      </aside>
+
+      {/* Main Content */}
+      <main className='flex-1 overflow-auto'>{children}</main>
+    </div>
+  );
+};
+
+export default AppLayout;
