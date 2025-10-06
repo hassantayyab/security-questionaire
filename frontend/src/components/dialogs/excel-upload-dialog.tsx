@@ -1,20 +1,13 @@
 'use client';
 
-import AppButton from '@/components/AppButton';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { appConfig } from '@/config/app';
 import { api, ApiError } from '@/lib/api';
 import { AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '../ui/button';
+import { StandardDialog } from './standard-dialog';
 
 interface ExcelUploadDialogProps {
   children: React.ReactNode;
@@ -129,120 +122,105 @@ export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDial
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className='bg-white max-w-lg w-full rounded-lg shadow-2xl border-0'>
-        {/* Header */}
-        <DialogHeader className='flex flex-row items-center justify-between border-b border-gray-200 px-6 py-4 space-y-0'>
-          <DialogTitle className='text-base font-medium text-gray-900'>
-            Add Questionnaire
-          </DialogTitle>
-        </DialogHeader>
-
-        {/* Content */}
-        <div className='flex flex-col gap-5 p-6'>
-          {/* Document Upload Section */}
-          <div className='flex flex-col gap-1 w-full'>
-            <div className='flex gap-1 items-center'>
-              <Label className='text-xs font-medium text-gray-700'>Excel File</Label>
-            </div>
-
-            <div
-              className={`bg-gray-50 border-2 border-dashed rounded-lg flex flex-col gap-2 h-[120px] items-center justify-center px-6 py-8 w-full cursor-pointer hover:bg-gray-100 transition-colors ${
-                error ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              } ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
-              onClick={() => !isUploading && document.getElementById('excel-file-upload')?.click()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => !isUploading && handleDrop(e)}
-            >
-              {uploadedFile ? (
-                <div className='flex flex-col items-center gap-3'>
-                  <div className='flex gap-3 items-center'>
-                    <FileSpreadsheet className='h-5 w-5 text-gray-500' />
-                    <div className='text-sm font-medium text-gray-700 truncate max-w-[250px]'>
-                      {uploadedFile.name}
-                    </div>
-                  </div>
-                  <div className='flex gap-2 items-center'>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        !isUploading && document.getElementById('excel-file-upload')?.click();
-                      }}
-                      disabled={isUploading}
-                      className='hover:bg-white'
-                    >
-                      Upload
-                    </Button>
-                    <Button
-                      variant='text'
-                      size='sm'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        !isUploading && handleDelete();
-                      }}
-                      disabled={isUploading}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className='flex flex-col items-center gap-2'>
-                  <span className='text-sm font-medium text-gray-600'>
-                    <span className='text-violet-600'>Upload</span> or drag and drop
-                  </span>
-                  <span className='text-xs text-gray-500'>
-                    Excel files (.xlsx, .xls) up to {appConfig.maxFileSize / 1024 / 1024}MB
-                  </span>
-                </div>
-              )}
-
-              <input
-                id='excel-file-upload'
-                type='file'
-                accept='.xlsx,.xls'
-                onChange={handleFileUpload}
-                disabled={isUploading}
-                className='hidden'
-              />
-            </div>
+    <StandardDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={children}
+      title='Add Questionnaire'
+      maxWidth='max-w-lg'
+      onCancel={handleCancel}
+      onAction={handleSave}
+      actionDisabled={!uploadedFile}
+      actionLoading={isUploading}
+      actionLabel={isUploading ? 'Uploading...' : 'Save'}
+    >
+      <div className='flex flex-col gap-5'>
+        {/* Document Upload Section */}
+        <div className='flex flex-col gap-1 w-full'>
+          <div className='flex gap-1 items-center'>
+            <Label className='text-xs font-medium text-gray-700'>Excel File</Label>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className='flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md'>
-              <AlertCircle className='w-4 h-4 text-red-500 flex-shrink-0' />
-              <span className='text-sm text-red-700'>{error}</span>
-            </div>
-          )}
-
-          {/* Upload Progress */}
-          {isUploading && (
-            <div className='flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md'>
-              <div className='w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin' />
-              <span className='text-sm text-blue-700'>Uploading and processing Excel file...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className='bg-white border-t border-gray-200 flex gap-4 items-center justify-end px-6 py-4'>
-          <AppButton variant='secondary' onClick={handleCancel} disabled={isUploading}>
-            Cancel
-          </AppButton>
-          <AppButton
-            variant='primary'
-            onClick={handleSave}
-            disabled={!uploadedFile}
-            loading={isUploading}
+          <div
+            className={`bg-gray-50 border-2 border-dashed rounded-lg flex flex-col gap-2 h-[120px] items-center justify-center px-6 py-8 w-full cursor-pointer hover:bg-gray-100 transition-colors ${
+              error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+            } ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
+            onClick={() => !isUploading && document.getElementById('excel-file-upload')?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => !isUploading && handleDrop(e)}
           >
-            {isUploading ? 'Uploading...' : 'Save'}
-          </AppButton>
+            {uploadedFile ? (
+              <div className='flex flex-col items-center gap-3'>
+                <div className='flex gap-3 items-center'>
+                  <FileSpreadsheet className='h-5 w-5 text-gray-500' />
+                  <div className='text-sm font-medium text-gray-700 truncate max-w-[250px]'>
+                    {uploadedFile.name}
+                  </div>
+                </div>
+                <div className='flex gap-2 items-center'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      !isUploading && document.getElementById('excel-file-upload')?.click();
+                    }}
+                    disabled={isUploading}
+                    className='hover:bg-white'
+                  >
+                    Upload
+                  </Button>
+                  <Button
+                    variant='text'
+                    size='sm'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      !isUploading && handleDelete();
+                    }}
+                    disabled={isUploading}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className='flex flex-col items-center gap-2'>
+                <span className='text-sm font-medium text-gray-600'>
+                  <span className='text-violet-600'>Upload</span> or drag and drop
+                </span>
+                <span className='text-xs text-gray-500'>
+                  Excel files (.xlsx, .xls) up to {appConfig.maxFileSize / 1024 / 1024}MB
+                </span>
+              </div>
+            )}
+
+            <input
+              id='excel-file-upload'
+              type='file'
+              accept='.xlsx,.xls'
+              onChange={handleFileUpload}
+              disabled={isUploading}
+              className='hidden'
+            />
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Error Message */}
+        {error && (
+          <div className='flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md'>
+            <AlertCircle className='w-4 h-4 text-red-500 flex-shrink-0' />
+            <span className='text-sm text-red-700'>{error}</span>
+          </div>
+        )}
+
+        {/* Upload Progress */}
+        {isUploading && (
+          <div className='flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md'>
+            <div className='w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin' />
+            <span className='text-sm text-blue-700'>Uploading and processing Excel file...</span>
+          </div>
+        )}
+      </div>
+    </StandardDialog>
   );
 };

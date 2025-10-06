@@ -2,6 +2,7 @@
 
 import AnswersLibraryTable from '@/components/AnswersLibraryTable';
 import SearchField from '@/components/SearchField';
+import { AddAnswerDialog } from '@/components/dialogs';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [viewingAnswer, setViewingAnswer] = useState<Answer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   // Mock data for demonstration - Replace with actual API call
   useEffect(() => {
@@ -131,7 +133,27 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   };
 
   const handleAddAnswer = () => {
-    toast.info('Add answer dialog - Coming soon!');
+    setIsAddDialogOpen(true);
+  };
+
+  const handleSaveAnswer = (question: string, answer: string) => {
+    // Create new answer object
+    const newAnswer: Answer = {
+      id: String(Date.now()), // Generate temporary ID
+      question,
+      answer,
+      source: {
+        type: 'user',
+        name: 'Current User', // Replace with actual user name when available
+      },
+      last_updated: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // Add new answer to the list
+    setAnswers([newAnswer, ...answers]);
+    toast.success('Answer added successfully');
   };
 
   const handleImportQuestionnaire = () => {
@@ -199,6 +221,13 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
           onDelete={handleDeleteAnswer}
         />
       )}
+
+      {/* Add Answer Dialog */}
+      <AddAnswerDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSave={handleSaveAnswer}
+      />
 
       {/* Answer Preview Dialog */}
       {viewingAnswer && (
