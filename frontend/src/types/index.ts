@@ -22,6 +22,12 @@ export interface Questionnaire {
   created_at: string;
   updated_at: string;
   question_count?: number;
+  approved_count?: number;
+  approved_date?: string | null;
+  owner?: {
+    name: string;
+    avatar?: string;
+  };
 }
 
 export interface Question {
@@ -33,6 +39,11 @@ export interface Question {
   created_at: string;
   updated_at: string;
   row_number?: number;
+  answer_source?: 'ai' | 'user' | 'copied' | 'not_found' | null;
+  owner?: {
+    name: string;
+    avatar?: string;
+  };
 }
 
 export interface UploadResponse {

@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 interface SearchFieldProps {
@@ -9,14 +10,14 @@ interface SearchFieldProps {
   className?: string;
 }
 
-const SearchIcon = () => (
+const SearchIcon = ({ className }: { className?: string }) => (
   <svg
     xmlns='http://www.w3.org/2000/svg'
     width='16'
     height='16'
     viewBox='0 0 16 16'
     fill='none'
-    className='text-gray-400'
+    className={cn('text-gray-400', className)}
   >
     <path
       fillRule='evenodd'
@@ -50,9 +51,7 @@ export const SearchField = ({
     <div className={`relative ${className}`}>
       <div className='bg-white relative rounded border border-gray-200 shadow-xs focus-within:border-violet-600 focus-within:ring-1 focus-within:ring-violet-600 transition-all duration-200'>
         <div className='flex items-center gap-2 px-3 py-2'>
-          <div className='shrink-0 w-4 h-4'>
-            <SearchIcon />
-          </div>
+          <SearchIcon className='shrink-0 size-3' />
           <input
             type='text'
             value={currentValue}

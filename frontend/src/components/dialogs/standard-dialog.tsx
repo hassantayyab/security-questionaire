@@ -62,7 +62,7 @@ export const StandardDialog = ({
 
       <DialogContent className={`p-0 ${maxWidth} gap-0`} showCloseButton={false}>
         {/* Header */}
-        <div className='flex items-center justify-between border-b border-gray-200 px-5 py-3'>
+        <div className='flex items-center justify-between border-b border-gray-200 px-5 py-4'>
           <DialogTitle className='text-sm font-medium text-gray-900'>{title}</DialogTitle>
           {showCloseButton && (
             <DialogClose>

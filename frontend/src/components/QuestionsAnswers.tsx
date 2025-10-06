@@ -1,41 +1,31 @@
 'use client';
 
 import AppButton from '@/components/AppButton';
-import DataTable, {
-  createBadgeCell,
-  createTextCell,
-  DataTableAction,
-  DataTableColumn,
-} from '@/components/DataTable';
+import QuestionnaireDetailView from '@/components/QuestionnaireDetailView';
+import QuestionnairesTable from '@/components/QuestionnairesTable';
+import QuestionsTable from '@/components/QuestionsTable';
 import SearchField from '@/components/SearchField';
 import { ExcelUploadDialog } from '@/components/dialogs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { appConfig } from '@/config/app';
 import { api, ApiError } from '@/lib/api';
 import { GenerateAnswersResponse, Question, Questionnaire, UploadResponse } from '@/types';
 import {
   CheckCircle,
   Download,
-  Edit,
   FileSpreadsheet,
   HelpCircle,
   Loader2,
   Plus,
-  Save,
   Search,
   Sparkles,
-  Trash2,
   X,
   XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 
 interface QuestionsAnswersProps {
@@ -52,6 +42,9 @@ export default function QuestionsAnswers({ onCountChange }: QuestionsAnswersProp
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [editingAnswer, setEditingAnswer] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
+  const [selectedQuestionnaireRows, setSelectedQuestionnaireRows] = useState<Set<string>>(
+    new Set(),
+  );
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [generationProgress, setGenerationProgress] = useState<{
     total: number;
@@ -429,6 +422,45 @@ export default function QuestionsAnswers({ onCountChange }: QuestionsAnswersProp
     setSelectedQuestions(newSelection);
   };
 
+  const handleQuestionnaireRowSelect = (id: string) => {
+    const newSelection = new Set(selectedQuestionnaireRows);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedQuestionnaireRows(newSelection);
+  };
+
+  const handleQuestionnaireSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedQuestionnaireRows(new Set(questionnaires.map((q) => q.id)));
+    } else {
+      setSelectedQuestionnaireRows(new Set());
+    }
+  };
+
+  const handleViewQuestionnaire = (questionnaire: Questionnaire) => {
+    setSelectedQuestionnaire(questionnaire);
+  };
+
+  const handleBackToList = () => {
+    setSelectedQuestionnaire(null);
+    setSearchTerm(''); // Clear search when going back
+  };
+
+  const handleGenerateSingleAnswer = async (question: Question) => {
+    // Logic to generate AI answer for a single question
+    toast.info('Generating AI answer for this question...');
+    // TODO: Implement single question answer generation
+  };
+
+  const handleRegenerateAnswer = async (question: Question) => {
+    // Logic to regenerate AI answer for a question
+    toast.info('Regenerating AI answer...');
+    // TODO: Implement answer regeneration
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -453,384 +485,112 @@ export default function QuestionsAnswers({ onCountChange }: QuestionsAnswersProp
   const approvedCount = filteredQuestions.filter((q) => q.status === 'approved').length;
   const unapprovedCount = filteredQuestions.filter((q) => q.status === 'unapproved').length;
 
-  // DataTable column configurations
-  const columns: DataTableColumn<Question>[] = [
-    {
-      key: 'question_text',
-      header: 'Question',
-      width: '35%',
-      maxWidth: '250px',
-      className: 'w-[35%]',
-      render: createTextCell(2, true),
-    },
-    {
-      key: 'answer',
-      header: 'Answer',
-      width: '35%',
-      maxWidth: '250px',
-      className: 'w-[35%]',
-      render: (question: Question) => {
-        if (editingQuestionId === question.id) {
-          return (
-            <div className='space-y-3 py-2'>
-              <Textarea
-                value={editingAnswer}
-                onChange={(e) => setEditingAnswer(e.target.value)}
-                placeholder='Enter answer...'
-                className='text-sm resize-none min-h-[80px] w-full'
-                rows={3}
-              />
-              <div className='flex gap-2'>
-                <Button
-                  size='sm'
-                  onClick={() => saveAnswer(question.id)}
-                  className='gap-1 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20'
-                >
-                  <Save className='w-3 h-3' />
-                  Save
-                </Button>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  onClick={cancelEditing}
-                  className='gap-1 border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
-                >
-                  <X className='w-3 h-3' />
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          );
-        }
-
-        if (question.answer) {
-          return (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className='line-clamp-2 leading-relaxed whitespace-normal break-words markdown-content cursor-help text-sm pr-4 py-2'>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      p: ({ children }) => <span className='inline'>{children}</span>,
-                      strong: ({ children }) => (
-                        <strong className='font-semibold'>{children}</strong>
-                      ),
-                      em: ({ children }) => <em className='italic'>{children}</em>,
-                      code: ({ children }) => (
-                        <code className='bg-gray-100 px-1 py-0.5 rounded-md text-xs font-mono'>
-                          {children}
-                        </code>
-                      ),
-                      ul: ({ children }) => <span className='inline'>{children}</span>,
-                      ol: ({ children }) => <span className='inline'>{children}</span>,
-                      li: ({ children }) => <span className='inline'>{children} </span>,
-                      h1: ({ children }) => <span className='font-semibold'>{children}</span>,
-                      h2: ({ children }) => <span className='font-semibold'>{children}</span>,
-                      h3: ({ children }) => <span className='font-semibold'>{children}</span>,
-                      h4: ({ children }) => <span className='font-semibold'>{children}</span>,
-                      h5: ({ children }) => <span className='font-semibold'>{children}</span>,
-                      h6: ({ children }) => <span className='font-semibold'>{children}</span>,
-                      br: () => <span> </span>,
-                    }}
-                  >
-                    {question.answer}
-                  </ReactMarkdown>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent
-                className='max-w-md p-3 text-sm whitespace-normal break-words'
-                side='top'
-              >
-                <div className='max-h-40 overflow-y-auto prose prose-sm dark:prose-invert'>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{question.answer}</ReactMarkdown>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          );
-        }
-
-        return (
-          <div className='text-sm pr-4 py-2'>
-            <span className='text-gray-500 italic'>No answer generated yet</span>
-          </div>
-        );
-      },
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      width: '20',
-      className: 'w-20',
-      render: createBadgeCell((question: Question) => ({
-        className: `gap-1 ${
-          question.status === 'approved'
-            ? 'bg-violet-600 text-white border-violet-600'
-            : 'bg-secondary text-secondary-foreground border-secondary'
-        }`,
-        children: (
-          <>
-            {question.status === 'approved' ? (
-              <CheckCircle className='w-3 h-3' />
-            ) : (
-              <XCircle className='w-3 h-3' />
-            )}
-            <span className='hidden lg:inline'>{question.status}</span>
-          </>
-        ),
-      })),
-    },
-  ];
-
-  // DataTable action configurations - we need to create different actions based on question status
-  const getActionsForQuestion = (question: Question): DataTableAction<Question>[] => [
-    {
-      label: 'Edit answer',
-      icon: Edit,
-      onClick: startEditing,
-      disabled: () => editingQuestionId === question.id,
-      variant: 'outline',
-      className:
-        'border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20',
-    },
-    {
-      label: question.status === 'approved' ? 'Unapprove' : 'Approve',
-      icon: question.status === 'approved' ? XCircle : CheckCircle,
-      onClick: () => toggleApproval(question.id, question.status),
-      title: () => (question.status === 'approved' ? 'Unapprove' : 'Approve'),
-      variant: 'outline',
-      className:
-        'border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20',
-    },
-  ];
-
   return (
     <TooltipProvider delayDuration={500}>
       <div className='space-y-6'>
-        {/* Search and Upload Section */}
-        <div className='flex items-center justify-between w-full'>
-          <div className='w-64'>
-            <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
-          </div>
-          <ExcelUploadDialog
-            onUploadSuccess={async () => {
-              // Reload questionnaires after Excel upload
-              await loadQuestionnaires();
-            }}
-          >
-            <AppButton variant='primary'>
-              <Plus className='h-4 w-4 mr-2' />
-              Add Questionnaire
-            </AppButton>
-          </ExcelUploadDialog>
-        </div>
+        {/* Conditional rendering: List View or Detail View */}
+        {!selectedQuestionnaire ? (
+          <>
+            {/* LIST VIEW: Questionnaires Table */}
+            {/* Page Header */}
+            <div className='space-y-1'>
+              <h1 className='text-base font-semibold text-gray-900'>Questionnaires</h1>
+              <p className='text-xs text-gray-500'>Upload your questionnaire document</p>
+            </div>
 
-        {/* Questionnaire Selection */}
-        {questionnaires.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2'>
-                <FileSpreadsheet className='w-5 h-5' />
-                Select Questionnaire
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
-                {questionnaires.map((questionnaire) => (
-                  <Card
-                    key={questionnaire.id}
-                    className={`transition-colors cursor-pointer ${
-                      selectedQuestionnaire?.id === questionnaire.id
-                        ? 'border-primary bg-primary/5'
-                        : 'hover:border-primary/50'
-                    }`}
-                    onClick={() => setSelectedQuestionnaire(questionnaire)}
-                  >
-                    <CardContent className='p-4'>
-                      <div className='space-y-2'>
-                        <div className='flex items-center justify-between'>
-                          <div className='flex-1 cursor-pointer'>
-                            <div className='font-medium'>{questionnaire.name}</div>
-                            <div className='text-sm text-gray-500'>
-                              {formatDate(questionnaire.upload_date)}
-                            </div>
-                          </div>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='text-red-500 hover:text-red-500'
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteQuestionnaire(questionnaire);
-                            }}
-                          >
-                            <Trash2 className='w-4 h-4' />
-                          </Button>
-                        </div>
-                        {questionnaire.question_count && (
-                          <Badge variant='secondary'>
-                            {questionnaire.question_count} questions
+            {/* Search and Upload Section */}
+            <div className='flex items-center justify-between w-full'>
+              <div className='w-64'>
+                <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
+              </div>
+              <ExcelUploadDialog
+                onUploadSuccess={async () => {
+                  // Reload questionnaires after Excel upload
+                  await loadQuestionnaires();
+                }}
+              >
+                <AppButton variant='primary'>
+                  <Plus className='h-4 w-4 mr-2' />
+                  Import questionnaire
+                </AppButton>
+              </ExcelUploadDialog>
+            </div>
+
+            {/* Questionnaires Table */}
+            {questionnaires.length > 0 ? (
+              <QuestionnairesTable
+                data={questionnaires}
+                selectedRows={selectedQuestionnaireRows}
+                onRowSelect={handleQuestionnaireRowSelect}
+                onSelectAll={handleQuestionnaireSelectAll}
+                onView={handleViewQuestionnaire}
+                onDelete={handleDeleteQuestionnaire}
+              />
+            ) : (
+              <Card>
+                <CardContent className='py-12'>
+                  <div className='text-center space-y-3'>
+                    <FileSpreadsheet className='w-12 h-12 text-gray-500 mx-auto' />
+                    <div className='text-lg font-medium text-gray-500'>No questionnaires found</div>
+                    <div className='text-sm text-gray-500'>
+                      Upload an Excel questionnaire to get started
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        ) : (
+          <>
+            {/* DETAIL VIEW: Questionnaire Questions */}
+            <QuestionnaireDetailView
+              questionnaire={selectedQuestionnaire}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onBack={handleBackToList}
+              onExport={handleExport}
+              approvedCount={approvedCount}
+              totalCount={questions.length}
+              isGenerating={isGenerating}
+              generationProgress={generationProgress}
+            >
+              {/* Questions Management */}
+              {
+                <Card>
+                  <CardHeader>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <CardTitle className='flex items-center gap-2'>
+                          <HelpCircle className='w-5 h-5' />
+                          Questions & Answers
+                          <Badge variant='outline'>
+                            {searchTerm
+                              ? `${filteredQuestions.length}/${questions.length}`
+                              : `${questions.length} total`}
                           </Badge>
+                        </CardTitle>
+                        <CardDescription>
+                          Review, edit, and approve AI-generated answers for your questionnaire.
+                        </CardDescription>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        {questions.length > 0 && (
+                          <div className='flex items-center gap-2 text-sm'>
+                            <Badge className='gap-1 bg-violet-600 text-white border-violet-600'>
+                              <CheckCircle className='w-3 h-3' />
+                              {approvedCount} approved
+                            </Badge>
+                            <Badge variant='secondary' className='gap-1'>
+                              <XCircle className='w-3 h-3' />
+                              {unapprovedCount} pending
+                            </Badge>
+                          </div>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Questions Management */}
-        {selectedQuestionnaire && (
-          <Card>
-            <CardHeader>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <CardTitle className='flex items-center gap-2'>
-                    <HelpCircle className='w-5 h-5' />
-                    Questions & Answers
-                    <Badge variant='outline'>
-                      {searchTerm
-                        ? `${filteredQuestions.length}/${questions.length}`
-                        : `${questions.length} total`}
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription>
-                    Review, edit, and approve AI-generated answers for your questionnaire.
-                  </CardDescription>
-                </div>
-                <div className='flex items-center gap-2'>
-                  {questions.length > 0 && (
-                    <div className='flex items-center gap-2 text-sm'>
-                      <Badge className='gap-1 bg-violet-600 text-white border-violet-600'>
-                        <CheckCircle className='w-3 h-3' />
-                        {approvedCount} approved
-                      </Badge>
-                      <Badge variant='secondary' className='gap-1'>
-                        <XCircle className='w-3 h-3' />
-                        {unapprovedCount} pending
-                      </Badge>
                     </div>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {questions.length === 0 ? (
-                <div className='text-center py-8 space-y-3'>
-                  <HelpCircle className='w-12 h-12 text-gray-500 mx-auto' />
-                  <div className='text-lg font-medium text-gray-500'>No questions found</div>
-                  <div className='text-sm text-gray-500'>
-                    Upload an Excel questionnaire to get started
-                  </div>
-                </div>
-              ) : filteredQuestions.length === 0 && searchTerm ? (
-                <div className='text-center py-8 space-y-3'>
-                  <Search className='w-12 h-12 text-gray-500 mx-auto' />
-                  <div className='text-lg font-medium text-gray-500'>
-                    No questions match your search
-                  </div>
-                  <div className='text-sm text-gray-500'>
-                    Try adjusting your search term or clear the search to see all questions
-                  </div>
-                </div>
-              ) : (
-                <div className='space-y-4'>
-                  {/* Action Buttons */}
-                  <div className='flex items-center gap-2 flex-wrap'>
-                    <Button
-                      onClick={handleGenerateAnswers}
-                      disabled={isGenerating}
-                      className='gap-2 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20'
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className='w-4 h-4 animate-spin' />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className='w-4 h-4' />
-                          Generate AI Answers
-                        </>
-                      )}
-                    </Button>
-
-                    {isGenerating && (
-                      <Button
-                        variant='outline'
-                        onClick={stopPolling}
-                        className='gap-2 border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
-                      >
-                        <X className='w-4 h-4' />
-                        Stop Generation
-                      </Button>
-                    )}
-
-                    {approvedCount > 0 && (
-                      <Button
-                        variant='outline'
-                        onClick={handleExport}
-                        className='gap-2 ml-auto border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
-                      >
-                        <Download className='w-4 h-4' />
-                        Export Approved ({approvedCount})
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Generation Progress */}
-                  {isGenerating && generationProgress && (
-                    <Card className='border-dashed bg-gray-100/30'>
-                      <CardContent className='py-4'>
-                        <div className='space-y-3'>
-                          <div className='flex items-center justify-between text-sm'>
-                            <div className='flex items-center gap-2'>
-                              <Loader2 className='w-4 h-4 animate-spin' />
-                              <span className='font-medium'>Generating Answers</span>
-                            </div>
-                            <div className='text-gray-500'>
-                              {generationProgress.completed} of {generationProgress.total} completed
-                              {generationProgress.completed >= generationProgress.total && (
-                                <span className='text-violet-600 ml-2'>✓ Complete</span>
-                              )}
-                            </div>
-                          </div>
-                          <Progress
-                            value={(generationProgress.completed / generationProgress.total) * 100}
-                            className='w-full h-2'
-                          />
-                          <div className='text-xs text-gray-500'>
-                            Answers appear automatically below as they are generated by AI
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Questions Table */}
-                  <DataTable
-                    data={filteredQuestions}
-                    columns={columns}
-                    actions={getActionsForQuestion}
-                    showCheckboxes={true}
-                    selectedRows={selectedQuestions}
-                    onRowSelect={toggleQuestionSelection}
-                    onSelectAll={(selected) => {
-                      if (selected) {
-                        setSelectedQuestions(new Set(filteredQuestions.map((q) => q.id)));
-                      } else {
-                        setSelectedQuestions(new Set());
-                      }
-                    }}
-                    getRowId={(question) => question.id}
-                    getRowClassName={(question) => {
-                      const hasAnswer = question.answer && question.answer.trim();
-                      return `transition-all duration-300 ${
-                        hasAnswer && isGenerating ? 'answer-glow' : ''
-                      }`;
-                    }}
-                    emptyState={
+                  </CardHeader>
+                  <CardContent>
+                    {questions.length === 0 ? (
                       <div className='text-center py-8 space-y-3'>
                         <HelpCircle className='w-12 h-12 text-gray-500 mx-auto' />
                         <div className='text-lg font-medium text-gray-500'>No questions found</div>
@@ -838,12 +598,86 @@ export default function QuestionsAnswers({ onCountChange }: QuestionsAnswersProp
                           Upload an Excel questionnaire to get started
                         </div>
                       </div>
-                    }
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ) : filteredQuestions.length === 0 && searchTerm ? (
+                      <div className='text-center py-8 space-y-3'>
+                        <Search className='w-12 h-12 text-gray-500 mx-auto' />
+                        <div className='text-lg font-medium text-gray-500'>
+                          No questions match your search
+                        </div>
+                        <div className='text-sm text-gray-500'>
+                          Try adjusting your search term or clear the search to see all questions
+                        </div>
+                      </div>
+                    ) : (
+                      <div className='space-y-4'>
+                        {/* Action Buttons */}
+                        <div className='flex items-center gap-2 flex-wrap'>
+                          <Button
+                            onClick={handleGenerateAnswers}
+                            disabled={isGenerating}
+                            className='gap-2 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20'
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className='w-4 h-4 animate-spin' />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className='w-4 h-4' />
+                                Generate AI Answers
+                              </>
+                            )}
+                          </Button>
+
+                          {isGenerating && (
+                            <Button
+                              variant='outline'
+                              onClick={stopPolling}
+                              className='gap-2 border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
+                            >
+                              <X className='w-4 h-4' />
+                              Stop Generation
+                            </Button>
+                          )}
+
+                          {approvedCount > 0 && (
+                            <Button
+                              variant='outline'
+                              onClick={handleExport}
+                              className='gap-2 ml-auto border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
+                            >
+                              <Download className='w-4 h-4' />
+                              Export Approved ({approvedCount})
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Questions Table */}
+                        <QuestionsTable
+                          data={filteredQuestions}
+                          selectedRows={selectedQuestions}
+                          onRowSelect={toggleQuestionSelection}
+                          onSelectAll={(selected) => {
+                            if (selected) {
+                              setSelectedQuestions(new Set(filteredQuestions.map((q) => q.id)));
+                            } else {
+                              setSelectedQuestions(new Set());
+                            }
+                          }}
+                          onEdit={startEditing}
+                          onApprove={(question) => toggleApproval(question.id, question.status)}
+                          onUnapprove={(question) => toggleApproval(question.id, question.status)}
+                          onGenerateAI={handleGenerateSingleAnswer}
+                          onRegenerateAI={handleRegenerateAnswer}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              }
+            </QuestionnaireDetailView>
+          </>
         )}
       </div>
     </TooltipProvider>
