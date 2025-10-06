@@ -331,7 +331,7 @@ class DatabaseService:
                 "question": answer_data["question"],
                 "answer": answer_data["answer"],
                 "source_type": "user",
-                "source_name": "Current User",  # TODO: Get from auth when implemented
+                "source_name": "User",  # TODO: Get from auth when implemented
                 "created_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow().isoformat()
             }
@@ -348,6 +348,62 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Error creating answer: {str(e)}")
             raise Exception(f"Database error creating answer: {str(e)}")
+    
+    async def bulk_create_answers(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Bulk create multiple answers
+        
+        Args:
+            answers: List of answer dictionaries with 'question' and 'answer' keys
+            
+        Returns:
+            Dictionary with success count, error count, and created answer IDs
+        """
+        try:
+            if not answers:
+                return {"success_count": 0, "error_count": 0, "created_ids": []}
+            
+            created_ids = []
+            errors = []
+            
+            # Prepare batch insert data
+            insert_data = []
+            for idx, answer in enumerate(answers):
+                try:
+                    # Validate each answer
+                    if not answer.get("question") or not answer.get("answer"):
+                        errors.append(f"Row {idx + 1}: Missing question or answer")
+                        continue
+                    
+                    insert_data.append({
+                        "question": answer["question"],
+                        "answer": answer["answer"],
+                        "source_type": "user",
+                        "source_name": "File",
+                        "created_at": datetime.utcnow().isoformat(),
+                        "updated_at": datetime.utcnow().isoformat()
+                    })
+                except Exception as e:
+                    errors.append(f"Row {idx + 1}: {str(e)}")
+            
+            # Bulk insert if we have valid data
+            if insert_data:
+                result = self.client.table("answers").insert(insert_data).execute()
+                
+                if result.data:
+                    created_ids = [item["id"] for item in result.data]
+                    logger.info(f"Bulk created {len(created_ids)} answers")
+            
+            return {
+                "success_count": len(created_ids),
+                "error_count": len(errors),
+                "created_ids": created_ids,
+                "errors": errors
+            }
+                
+        except Exception as e:
+            logger.error(f"Error bulk creating answers: {str(e)}")
+            raise Exception(f"Database error bulk creating answers: {str(e)}")
     
     async def get_all_answers(self) -> List[Dict[str, Any]]:
         """Get all answers from the library"""

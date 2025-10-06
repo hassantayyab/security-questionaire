@@ -288,12 +288,25 @@ CREATE INDEX idx_answers_source_type ON answers(source_type);
 
 ### Answers Library
 
-- Create and save question-answer pairs manually
-- Import answers from processed questionnaires
-- View saved answers in a searchable table
-- Update and delete answers
-- Track answer source (user or questionnaire)
-- Search and filter functionality
+- [x] Create and save question-answer pairs manually
+- [x] Bulk import questions and answers from Excel files (up to 1000 at once)
+- [x] Multi-step Excel import wizard with column selection and preview
+- [x] Import answers from processed questionnaires
+- [x] View saved answers in a searchable table
+- [x] Update and delete answers
+- [x] Track answer source (user or questionnaire)
+- [x] Search and filter functionality
+
+**Excel Import Feature (Completed):**
+
+- Multi-step wizard: Upload → Column Selection → Preview → Import
+- Support for .xlsx and .xls files (max 5MB)
+- Flexible column selection (any column names)
+- Preview first 5 rows before importing
+- Client-side Excel parsing using xlsx library
+- Bulk database insert with validation
+- Success/error reporting
+- See `EXCEL_IMPORT_PLAN.md` and `SAMPLE_QUESTIONNAIRE.md` for details
 
 ## AI Integration Details
 

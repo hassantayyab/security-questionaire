@@ -42,7 +42,9 @@ That's it! Your application will be running at:
 
 - 📄 **PDF Policy Processing**: Extract text from security policies using PyPDF2
 - 📊 **Excel Questionnaire Import**: Parse questionnaires with openpyxl
+- 📥 **Bulk Answer Import**: Import questions and answers from Excel files (up to 1000 at once)
 - 🤖 **AI-Powered Answers**: Generate responses using Anthropic Claude Sonnet 4
+- 📚 **Answer Library**: Reusable question-answer pairs for faster questionnaire completion
 - ✅ **Review & Approval Workflow**: Edit and approve AI-generated answers
 - 📈 **Bulk Operations**: Approve/unapprove multiple answers at once
 - 📁 **CSV Export**: Export approved answers for compliance reporting
@@ -257,12 +259,23 @@ cool-summit-app/
 
 ## 🔄 Workflow
 
+### Standard Questionnaire Process
+
 1. **Upload Policies**: Drag & drop PDF files containing security policies
 2. **Import Questions**: Upload Excel files with questionnaires
 3. **Generate Answers**: Use AI to automatically generate answers based on policies
 4. **Review & Edit**: Manually review and edit AI-generated responses
 5. **Approve Answers**: Mark answers as approved for final export
 6. **Export Results**: Download CSV files with approved answers
+
+### Bulk Import to Answer Library
+
+1. **Prepare Excel File**: Create Excel file with questions and answers (see SAMPLE_QUESTIONNAIRE.md)
+2. **Import**: Click "Import questionnaire" in Answer Library
+3. **Select Columns**: Choose which columns contain questions and answers
+4. **Preview**: Review first 5 rows before importing
+5. **Import**: Bulk create up to 1000 answers at once
+6. **Reuse**: Use imported answers for faster questionnaire completion
 
 ## 🚀 Deployment
 
@@ -290,7 +303,7 @@ cd backend
 - **Frontend**: TypeScript, Next.js 14, React 19, Tailwind CSS v4
 - **Database**: Supabase (PostgreSQL)
 - **UI Components**: shadcn/ui, Radix UI, Lucide React
-- **File Processing**: PyPDF2 (PDF), openpyxl (Excel)
+- **File Processing**: PyPDF2 (PDF), openpyxl (Excel), xlsx (Excel parsing)
 
 ### Code Style
 

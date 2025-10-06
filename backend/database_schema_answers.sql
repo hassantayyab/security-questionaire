@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS answers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
-  source_type TEXT NOT NULL CHECK (source_type IN ('user', 'questionnaire')),
-  source_name TEXT NOT NULL,
+  source_type TEXT NOT NULL DEFAULT 'user' CHECK (source_type IN ('user', 'questionnaire')),
+  source_name TEXT NOT NULL DEFAULT 'User',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

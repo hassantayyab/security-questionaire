@@ -28,7 +28,7 @@ Retrieve all answers from the library.
       "question": "Question text",
       "answer": "Answer text",
       "source_type": "user",
-      "source_name": "Current User",
+      "source_name": "User",
       "created_at": "2025-10-06T10:00:00Z",
       "updated_at": "2025-10-06T10:00:00Z"
     }
@@ -210,10 +210,50 @@ curl -X DELETE http://localhost:8000/api/answers/{answer_id}
 - **Frontend Component**: `frontend/src/components/AnswersLibrary.tsx`
 - **API Client**: `frontend/src/lib/api.ts`
 
+### POST /api/answers/bulk-import
+
+Bulk import multiple answers from Excel files.
+
+**Request Body:**
+
+```json
+{
+  "answers": [
+    {
+      "question": "What is GDPR?",
+      "answer": "General Data Protection Regulation..."
+    },
+    {
+      "question": "What is ISO 27001?",
+      "answer": "Information Security Management..."
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Imported 2 answers successfully",
+  "success_count": 2,
+  "error_count": 0,
+  "total_submitted": 2,
+  "errors": []
+}
+```
+
+**Limits:**
+
+- Maximum 1000 answers per import
+- Question length: 1-500 characters
+- Answer length: 1-5000 characters
+
 ## Future Enhancements
 
-- [ ] Add search and filtering capabilities
-- [ ] Implement bulk operations (import/export)
+- [x] Add search and filtering capabilities
+- [x] Implement bulk operations (import/export)
 - [ ] Add tagging and categorization
 - [ ] Support for rich text formatting in answers
 - [ ] Version history for answers

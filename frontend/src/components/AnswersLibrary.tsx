@@ -2,7 +2,7 @@
 
 import AnswersLibraryTable from '@/components/AnswersLibraryTable';
 import SearchField from '@/components/SearchField';
-import { AddAnswerDialog } from '@/components/dialogs';
+import { AddAnswerDialog, ImportQuestionnaireDialog } from '@/components/dialogs';
 import { api } from '@/lib/api';
 import { Answer } from '@/types';
 import { FileText, Import, Plus } from 'lucide-react';
@@ -19,6 +19,7 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   const [editingAnswer, setEditingAnswer] = useState<Answer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch answers from backend on mount
@@ -119,7 +120,35 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   };
 
   const handleImportQuestionnaire = () => {
-    toast.info('Import questionnaire dialog - Coming soon!');
+    setIsImportDialogOpen(true);
+  };
+
+  const handleBulkImport = async (answersToImport: Array<{ question: string; answer: string }>) => {
+    try {
+      const response = await api.bulkImportAnswers(answersToImport);
+
+      if (response.success) {
+        // Refresh the answers list
+        await fetchAnswers();
+        toast.success(
+          `Successfully imported ${response.success_count} answer${
+            response.success_count === 1 ? '' : 's'
+          }`,
+        );
+
+        if (response.error_count > 0) {
+          toast.warning(
+            `${response.error_count} row${
+              response.error_count === 1 ? '' : 's'
+            } could not be imported`,
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error importing answers:', error);
+      toast.error('Failed to import answers');
+      throw error;
+    }
   };
 
   // Filter answers based on search term
@@ -194,6 +223,13 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
         onOpenChange={setIsDialogOpen}
         onSave={handleSaveAnswer}
         editAnswer={editingAnswer}
+      />
+
+      {/* Import Questionnaire Dialog */}
+      <ImportQuestionnaireDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        onImport={handleBulkImport}
       />
     </div>
   );

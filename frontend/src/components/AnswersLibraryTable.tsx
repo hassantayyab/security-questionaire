@@ -2,7 +2,7 @@
 
 import { GenericTable, TableAction, TableColumn } from '@/components/tables';
 import { Answer } from '@/types';
-import { ClipboardList, User } from 'lucide-react';
+import { ClipboardList, FileSpreadsheet, User } from 'lucide-react';
 
 interface AnswersLibraryTableProps {
   data: Answer[];
@@ -50,16 +50,22 @@ const AnswersLibraryTable = ({
       key: 'source_name' as keyof Answer,
       header: 'Source',
       width: '150px',
-      render: (answer) => (
-        <div className='flex items-center gap-1.5'>
-          {answer.source_type === 'user' ? (
-            <User className='w-3.5 h-3.5 text-gray-500' />
-          ) : (
-            <ClipboardList className='w-3.5 h-3.5 text-gray-500' />
-          )}
-          <span className='text-xs text-gray-900 truncate'>{answer.source_name}</span>
-        </div>
-      ),
+      render: (answer) => {
+        // Determine icon based on source
+        const isFileImport = answer.source_name?.toLowerCase() === 'file';
+        const Icon = isFileImport
+          ? FileSpreadsheet
+          : answer.source_name?.toLowerCase() === 'user'
+          ? User
+          : ClipboardList;
+
+        return (
+          <div className='flex items-center gap-1.5'>
+            <Icon className='w-3.5 h-3.5 text-gray-500' />
+            <span className='text-xs text-gray-900 truncate'>{answer.source_name}</span>
+          </div>
+        );
+      },
     },
     {
       key: 'updated_at',

@@ -183,6 +183,13 @@ class ApiClient {
   async getAnswerById(answerId: string) {
     return this.request<any>(`/answers/${answerId}`);
   }
+
+  async bulkImportAnswers(answers: Array<{ question: string; answer: string }>) {
+    return this.request<any>('/answers/bulk-import', {
+      method: 'POST',
+      body: JSON.stringify({ answers }),
+    });
+  }
 }
 
 export const api = new ApiClient();

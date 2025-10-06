@@ -91,8 +91,51 @@ className = 'text-xs font-medium text-gray-700 leading-4 block';
 
 ## Existing Dialogs
 
-- **AddAnswerDialog**: Add new question/answer pairs
-- **ExcelUploadDialog**: Upload Excel questionnaires
-- **UploadResourceDialog**: Upload resource documents
+- **AddAnswerDialog**: Add or edit single question/answer pairs in the Answer Library
+- **ExcelUploadDialog**: Upload Excel questionnaires for processing
+- **ImportQuestionnaireDialog**: Import multiple questions/answers from Excel files (multi-step wizard)
+- **UploadResourceDialog**: Upload resource documents (PDFs, etc.)
 
-All these dialogs now use the `StandardDialog` component for consistency.
+All these dialogs use the `StandardDialog` component for consistency.
+
+## Import Questionnaire Dialog
+
+The `ImportQuestionnaireDialog` is a multi-step wizard for bulk importing questions and answers from Excel files.
+
+### Features
+
+- **Multi-step Process**: Upload → Column Selection → Preview → Import
+- **Excel File Parsing**: Uses xlsx library to parse .xlsx and .xls files
+- **Smart Column Selection**: Automatically suggests first two columns, allows manual selection
+- **Preview Before Import**: Shows first 5 rows of mapped data
+- **Validation**: Checks question/answer length limits (1-500 and 1-5000 characters)
+- **Bulk Import**: Creates multiple answers in a single API call
+- **Error Handling**: Displays validation errors and warnings
+- **Progress Indicators**: Shows loading states during parsing and importing
+
+### Usage
+
+```tsx
+import { ImportQuestionnaireDialog } from '@/components/dialogs';
+
+<ImportQuestionnaireDialog open={isOpen} onOpenChange={setIsOpen} onImport={handleBulkImport} />;
+```
+
+### Import Flow
+
+1. **Upload Step**: User uploads Excel file (.xlsx or .xls, max 5MB)
+2. **Mapping Step**: User selects which columns contain questions and answers
+3. **Preview Step**: User reviews first 5 rows and sees import summary
+4. **Importing Step**: System sends data to backend and creates answers
+5. **Complete**: Dialog closes and parent component is notified
+
+### Excel File Requirements
+
+- File format: .xlsx or .xls
+- Max file size: 5MB
+- Max rows: 1000 questions per import
+- Question length: 1-500 characters
+- Answer length: 1-5000 characters
+- Empty rows: Automatically skipped
+
+See `SAMPLE_QUESTIONNAIRE.md` in the project root for examples and detailed instructions.

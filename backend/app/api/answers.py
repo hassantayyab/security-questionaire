@@ -25,6 +25,11 @@ class AnswerUpdate(BaseModel):
     answer: str
 
 
+class BulkAnswerCreate(BaseModel):
+    """Model for bulk creating answers"""
+    answers: List[AnswerCreate]
+
+
 @router.get("/")
 async def get_answers(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
     """
@@ -95,6 +100,65 @@ async def create_answer(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating answer: {str(e)}")
+
+
+@router.post("/bulk-import")
+async def bulk_import_answers(
+    bulk_data: BulkAnswerCreate,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """
+    Bulk import multiple answers from Excel
+    
+    Args:
+        bulk_data: List of question and answer pairs
+        
+    Returns:
+        Import results with success/error counts
+    """
+    try:
+        # Validate input
+        if not bulk_data.answers:
+            raise HTTPException(status_code=400, detail="No answers provided")
+        
+        if len(bulk_data.answers) > 1000:
+            raise HTTPException(status_code=400, detail="Maximum 1000 answers per import")
+        
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Prepare answers for bulk insert
+        answers_to_insert = []
+        for idx, answer in enumerate(bulk_data.answers):
+            if not answer.question.strip():
+                continue  # Skip empty questions
+            
+            if not answer.answer.strip():
+                continue  # Skip empty answers
+            
+            answers_to_insert.append({
+                "question": answer.question.strip(),
+                "answer": answer.answer.strip()
+            })
+        
+        # Bulk create answers
+        result = await db_service.bulk_create_answers(answers_to_insert)
+        
+        return {
+            "success": True,
+            "message": f"Imported {result['success_count']} answers successfully",
+            "success_count": result["success_count"],
+            "error_count": result["error_count"],
+            "total_submitted": len(bulk_data.answers),
+            "errors": result.get("errors", [])
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error importing answers: {str(e)}")
 
 
 @router.put("/{answer_id}")
