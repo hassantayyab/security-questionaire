@@ -39,14 +39,14 @@ const QuestionnaireDetailView = ({
   const isCompleted = totalCount > 0 && approvedCount === totalCount;
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-4'>
       {/* Header Section */}
       <div className='space-y-4'>
         {/* Breadcrumb and Title Section */}
         <div className='space-y-4'>
           <Link
             href='/questionnaire'
-            className='text-xs font-medium text-gray-500 hover:text-violet-600 hover:underline transition-colors cursor-pointer underline-offset-2'
+            className='text-xs font-medium text-gray-500 hover:text-violet-600 hover:underline transition-colors cursor-pointer underline-offset-2 mb-4 inline-block'
           >
             Questionnaires
           </Link>

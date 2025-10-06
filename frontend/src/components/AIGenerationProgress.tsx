@@ -29,7 +29,7 @@ const AIGenerationProgress = ({ completed, total, className = '' }: AIGeneration
 
         {/* Progress Fill */}
         <div
-          className='absolute inset-y-0 left-0 bg-violet-600 rounded-full transition-all duration-300'
+          className='absolute inset-y-0 left-0 bg-emerald-500 rounded-full transition-all duration-300'
           style={{ width: `${percentage}%` }}
         />
       </div>

@@ -69,7 +69,7 @@ export default function QuestionnaireDetailPage({ params }: { params: { id: stri
       setIsLoading(true);
       const response = await api.getQuestionnaires();
       if (response.success) {
-        const found = response.questionnaires?.find((q) => q.id === params.id);
+        const found = response.questionnaires?.find((q: Questionnaire) => q.id === params.id);
         if (found) {
           setQuestionnaire(found);
         } else {
@@ -342,7 +342,7 @@ export default function QuestionnaireDetailPage({ params }: { params: { id: stri
   return (
     <AppLayout>
       <TooltipProvider delayDuration={500}>
-        <div className='p-6 space-y-6'>
+        <div className='p-6 space-y-4'>
           <QuestionnaireDetailView
             questionnaire={questionnaire}
             searchTerm={searchTerm}
