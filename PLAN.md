@@ -250,6 +250,24 @@ CREATE TABLE questions (
 );
 ```
 
+### Answers Library Table
+
+```sql
+CREATE TABLE answers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  source_type TEXT NOT NULL CHECK (source_type IN ('user', 'questionnaire')),
+  source_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_answers_created_at ON answers(created_at DESC);
+CREATE INDEX idx_answers_source_type ON answers(source_type);
+```
+
 ## Key Features Breakdown
 
 ### Knowledge Base Tab
@@ -267,6 +285,15 @@ CREATE TABLE questions (
 - Approve/Unapprove buttons
 - Bulk operations
 - Export functionality
+
+### Answers Library
+
+- Create and save question-answer pairs manually
+- Import answers from processed questionnaires
+- View saved answers in a searchable table
+- Update and delete answers
+- Track answer source (user or questionnaire)
+- Search and filter functionality
 
 ## AI Integration Details
 

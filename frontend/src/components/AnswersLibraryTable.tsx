@@ -47,27 +47,27 @@ const AnswersLibraryTable = ({
       ),
     },
     {
-      key: 'source',
+      key: 'source_name' as keyof Answer,
       header: 'Source',
       width: '150px',
       render: (answer) => (
         <div className='flex items-center gap-1.5'>
-          {answer.source.type === 'user' ? (
+          {answer.source_type === 'user' ? (
             <User className='w-3.5 h-3.5 text-gray-500' />
           ) : (
             <ClipboardList className='w-3.5 h-3.5 text-gray-500' />
           )}
-          <span className='text-xs text-gray-900 truncate'>{answer.source.name}</span>
+          <span className='text-xs text-gray-900 truncate'>{answer.source_name}</span>
         </div>
       ),
     },
     {
-      key: 'last_updated',
+      key: 'updated_at',
       header: 'Last updated',
       width: '120px',
       render: (answer) => (
         <span className='text-xs text-gray-900 whitespace-nowrap'>
-          {formatDate(answer.last_updated)}
+          {formatDate(answer.updated_at)}
         </span>
       ),
     },

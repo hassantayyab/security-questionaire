@@ -8,7 +8,8 @@ FastAPI backend for processing PDF policies and generating AI-powered questionna
 - **Excel Processing**: Parse questionnaire files using openpyxl
 - **AI Integration**: Generate answers using Anthropic Claude Sonnet 4
 - **Database**: Supabase PostgreSQL for data storage
-- **RESTful API**: Complete CRUD operations for policies and questionnaires
+- **RESTful API**: Complete CRUD operations for policies, questionnaires, and answers
+- **Answers Library**: Manage reusable question-answer pairs
 
 ## Quick Start
 
@@ -76,6 +77,16 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - `PUT /api/questionnaires/questions/bulk-approve` - Bulk approve answers
 - `GET /api/questionnaires/{id}/export` - Export approved answers
 
+### Answers Library
+
+- `GET /api/answers/` - Get all answers from library
+- `POST /api/answers/` - Create a new answer
+- `GET /api/answers/{id}` - Get specific answer by ID
+- `PUT /api/answers/{id}` - Update an existing answer
+- `DELETE /api/answers/{id}` - Delete an answer
+
+For detailed API documentation, see [app/api/README_ANSWERS.md](app/api/README_ANSWERS.md)
+
 ## PyPDF2 Implementation
 
 The PDF processing follows this specific workflow:
@@ -95,7 +106,9 @@ backend/
 │   ├── api/                 # API route handlers
 │   │   ├── health.py        # Health check endpoints
 │   │   ├── upload.py        # File upload endpoints
-│   │   └── questionnaires.py # Questionnaire management
+│   │   ├── questionnaires.py # Questionnaire management
+│   │   ├── answers.py       # Answers library endpoints
+│   │   └── README_ANSWERS.md # Answers API documentation
 │   ├── services/            # Business logic services
 │   │   ├── pdf_processor.py # PyPDF2 text extraction
 │   │   ├── excel_processor.py # Excel file processing
@@ -106,6 +119,7 @@ backend/
 │   └── main.py              # FastAPI application setup
 ├── requirements.txt         # Python dependencies
 ├── start.py                # Development server startup script
+├── database_schema_answers.sql # Answers table schema
 ├── env_template.txt        # Environment variables template
 └── README.md               # This file
 ```
@@ -158,12 +172,32 @@ CREATE TABLE questions (
 );
 ```
 
+### Answers Library Table
+
+```sql
+CREATE TABLE answers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  source_type TEXT NOT NULL CHECK (source_type IN ('user', 'questionnaire')),
+  source_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_answers_created_at ON answers(created_at DESC);
+CREATE INDEX idx_answers_source_type ON answers(source_type);
+```
+
+See [database_schema_answers.sql](database_schema_answers.sql) for the complete schema with triggers and RLS policies.
+
 ## Development
 
 ### Running Tests
 
 ```bash
-# TODO: Add test commands when tests are implemented
+# TODO: Add comprehensive tests
 ```
 
 ### Code Formatting

@@ -102,13 +102,28 @@ export interface Answer {
   id: string;
   question: string;
   answer: string;
-  source: {
-    type: 'user' | 'questionnaire';
-    name: string;
-  };
-  last_updated: string;
+  source_type: 'user' | 'questionnaire';
+  source_name: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface AnswerLibraryResponse {
+  success: boolean;
+  answers: Answer[];
+  count: number;
+}
+
+export interface AnswerCreateResponse {
+  success: boolean;
+  message: string;
+  answer: Answer;
+}
+
+export interface AnswerDeleteResponse {
+  success: boolean;
+  message: string;
+  answer_id: string;
 }
 
 export type { NavigationItem, NavigationSection } from './navigation';

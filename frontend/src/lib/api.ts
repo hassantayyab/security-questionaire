@@ -154,6 +154,35 @@ class ApiClient {
   async exportAnswers(questionnaireId: string) {
     return this.request<any>(`/questionnaires/${questionnaireId}/export`);
   }
+
+  // Answers Library
+  async getAnswers() {
+    return this.request<any>('/answers/');
+  }
+
+  async createAnswer(question: string, answer: string) {
+    return this.request<any>('/answers/', {
+      method: 'POST',
+      body: JSON.stringify({ question, answer }),
+    });
+  }
+
+  async updateAnswerLibrary(answerId: string, question: string, answer: string) {
+    return this.request<any>(`/answers/${answerId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ question, answer }),
+    });
+  }
+
+  async deleteAnswerLibrary(answerId: string) {
+    return this.request<any>(`/answers/${answerId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAnswerById(answerId: string) {
+    return this.request<any>(`/answers/${answerId}`);
+  }
 }
 
 export const api = new ApiClient();

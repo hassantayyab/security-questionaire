@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { api } from '@/lib/api';
 import { Answer } from '@/types';
 import { FileText, Import, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -25,84 +26,33 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   const [viewingAnswer, setViewingAnswer] = useState<Answer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data for demonstration - Replace with actual API call
+  // Fetch answers from backend on mount
   useEffect(() => {
-    const mockAnswers: Answer[] = [
-      {
-        id: '1',
-        question:
-          'Acceptable use of information and other associated assets and longer title for testing',
-        answer:
-          'Acceptable use of information and other associated assets and longer title for testing',
-        source: {
-          type: 'user',
-          name: 'Joe Doe',
-        },
-        last_updated: '2025-09-25T10:30:00Z',
-        created_at: '2025-09-25T10:30:00Z',
-        updated_at: '2025-09-25T10:30:00Z',
-      },
-      {
-        id: '2',
-        question: 'Do you have a physical office?',
-        answer: 'Yes',
-        source: {
-          type: 'questionnaire',
-          name: 'RFP-2025-21',
-        },
-        last_updated: '2025-09-25T10:30:00Z',
-        created_at: '2025-09-25T10:30:00Z',
-        updated_at: '2025-09-25T10:30:00Z',
-      },
-      {
-        id: '3',
-        question: "What is your company's data retention policy?",
-        answer:
-          'We retain data for 7 years in accordance with legal requirements and industry best practices.',
-        source: {
-          type: 'user',
-          name: 'Jane Smith',
-        },
-        last_updated: '2025-09-24T14:20:00Z',
-        created_at: '2025-09-24T14:20:00Z',
-        updated_at: '2025-09-24T14:20:00Z',
-      },
-      {
-        id: '4',
-        question: 'How do you handle security incidents?',
-        answer:
-          'We have a comprehensive incident response plan that includes detection, containment, investigation, and remediation procedures.',
-        source: {
-          type: 'questionnaire',
-          name: 'ISO-27001-2024',
-        },
-        last_updated: '2025-09-23T09:15:00Z',
-        created_at: '2025-09-23T09:15:00Z',
-        updated_at: '2025-09-23T09:15:00Z',
-      },
-      {
-        id: '5',
-        question: 'Do you conduct regular security training for employees?',
-        answer:
-          'Yes, all employees undergo mandatory security awareness training annually and phishing simulations quarterly.',
-        source: {
-          type: 'user',
-          name: 'Mike Johnson',
-        },
-        last_updated: '2025-09-22T16:45:00Z',
-        created_at: '2025-09-22T16:45:00Z',
-        updated_at: '2025-09-22T16:45:00Z',
-      },
-    ];
-
-    setAnswers(mockAnswers);
+    fetchAnswers();
   }, []);
 
   // Notify parent component when answers count changes
   useEffect(() => {
     onCountChange?.(answers.length);
   }, [answers.length, onCountChange]);
+
+  const fetchAnswers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.getAnswers();
+
+      if (response.success) {
+        setAnswers(response.answers);
+      }
+    } catch (error) {
+      console.error('Error fetching answers:', error);
+      toast.error('Failed to load answers');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRowSelect = (id: string) => {
     const newSelected = new Set(selectedRows);
@@ -122,38 +72,40 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
     }
   };
 
-  const handleDeleteAnswer = (answer: Answer) => {
+  const handleDeleteAnswer = async (answer: Answer) => {
     if (!confirm(`Are you sure you want to delete this answer? This action cannot be undone.`)) {
       return;
     }
 
-    // Remove the answer from the list
-    setAnswers(answers.filter((a) => a.id !== answer.id));
-    toast.success('Answer deleted successfully');
+    try {
+      const response = await api.deleteAnswerLibrary(answer.id);
+
+      if (response.success) {
+        setAnswers(answers.filter((a) => a.id !== answer.id));
+        toast.success('Answer deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting answer:', error);
+      toast.error('Failed to delete answer');
+    }
   };
 
   const handleAddAnswer = () => {
     setIsAddDialogOpen(true);
   };
 
-  const handleSaveAnswer = (question: string, answer: string) => {
-    // Create new answer object
-    const newAnswer: Answer = {
-      id: String(Date.now()), // Generate temporary ID
-      question,
-      answer,
-      source: {
-        type: 'user',
-        name: 'Current User', // Replace with actual user name when available
-      },
-      last_updated: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+  const handleSaveAnswer = async (question: string, answer: string) => {
+    try {
+      const response = await api.createAnswer(question, answer);
 
-    // Add new answer to the list
-    setAnswers([newAnswer, ...answers]);
-    toast.success('Answer added successfully');
+      if (response.success && response.answer) {
+        setAnswers([response.answer, ...answers]);
+        toast.success('Answer added successfully');
+      }
+    } catch (error) {
+      console.error('Error creating answer:', error);
+      toast.error('Failed to add answer');
+    }
   };
 
   const handleImportQuestionnaire = () => {
@@ -196,7 +148,11 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
       </div>
 
       {/* Answers List */}
-      {answers.length === 0 ? (
+      {isLoading ? (
+        <div className='text-center py-8 space-y-3'>
+          <div className='text-base font-medium text-gray-500'>Loading answers...</div>
+        </div>
+      ) : answers.length === 0 ? (
         <div className='text-center py-8 space-y-3'>
           <FileText className='w-12 h-12 text-gray-500 mx-auto' />
           <div className='text-base font-medium text-gray-500'>No answers available</div>
@@ -262,8 +218,8 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
               <div>
                 <label className='text-sm font-medium text-gray-900 block mb-2'>Source</label>
                 <div className='text-sm text-gray-700'>
-                  {viewingAnswer.source.type === 'user' ? 'User: ' : 'Questionnaire: '}
-                  {viewingAnswer.source.name}
+                  {viewingAnswer.source_type === 'user' ? 'User: ' : 'Questionnaire: '}
+                  {viewingAnswer.source_name}
                 </div>
               </div>
 
@@ -271,7 +227,7 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
               <div>
                 <label className='text-sm font-medium text-gray-900 block mb-2'>Last Updated</label>
                 <div className='text-sm text-gray-700'>
-                  {new Date(viewingAnswer.last_updated).toLocaleString('en-US', {
+                  {new Date(viewingAnswer.updated_at).toLocaleString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

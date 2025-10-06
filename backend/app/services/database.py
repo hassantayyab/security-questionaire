@@ -312,3 +312,81 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Error getting statistics: {str(e)}")
             return {"error": str(e)}
+    
+    # ANSWER LIBRARY OPERATIONS
+    
+    async def create_answer(self, answer_data: Dict[str, Any]) -> str:
+        """
+        Create a new answer in the library
+        
+        Args:
+            answer_data: Answer information including question and answer text
+            
+        Returns:
+            str: Answer ID
+        """
+        try:
+            answer_record = {
+                "id": str(uuid.uuid4()),
+                "question": answer_data["question"],
+                "answer": answer_data["answer"],
+                "source_type": "user",
+                "source_name": "Current User",  # TODO: Get from auth when implemented
+                "created_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            result = self.client.table("answers").insert(answer_record).execute()
+            
+            if result.data:
+                answer_id = result.data[0]["id"]
+                logger.info(f"Created answer: {answer_id}")
+                return answer_id
+            else:
+                raise Exception("Failed to create answer record")
+                
+        except Exception as e:
+            logger.error(f"Error creating answer: {str(e)}")
+            raise Exception(f"Database error creating answer: {str(e)}")
+    
+    async def get_all_answers(self) -> List[Dict[str, Any]]:
+        """Get all answers from the library"""
+        try:
+            result = self.client.table("answers").select("*").order("created_at", desc=True).execute()
+            return result.data
+        except Exception as e:
+            logger.error(f"Error fetching answers: {str(e)}")
+            raise Exception(f"Database error fetching answers: {str(e)}")
+    
+    async def get_answer_by_id(self, answer_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific answer by ID"""
+        try:
+            result = self.client.table("answers").select("*").eq("id", answer_id).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            logger.error(f"Error fetching answer {answer_id}: {str(e)}")
+            raise Exception(f"Database error fetching answer: {str(e)}")
+    
+    async def update_answer(self, answer_id: str, answer_data: Dict[str, Any]) -> bool:
+        """Update an answer"""
+        try:
+            update_data = {
+                "question": answer_data["question"],
+                "answer": answer_data["answer"],
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            result = self.client.table("answers").update(update_data).eq("id", answer_id).execute()
+            return len(result.data) > 0
+        except Exception as e:
+            logger.error(f"Error updating answer {answer_id}: {str(e)}")
+            raise Exception(f"Database error updating answer: {str(e)}")
+    
+    async def delete_answer(self, answer_id: str) -> bool:
+        """Delete an answer"""
+        try:
+            result = self.client.table("answers").delete().eq("id", answer_id).execute()
+            return len(result.data) > 0
+        except Exception as e:
+            logger.error(f"Error deleting answer {answer_id}: {str(e)}")
+            raise Exception(f"Database error deleting answer: {str(e)}")
