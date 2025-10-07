@@ -21,7 +21,6 @@ const QuestionnairesTable = ({
   onView,
   onDelete,
 }: QuestionnairesTableProps) => {
-  // Format date as DD.MM.YYYY following Figma design
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '—';
 
@@ -51,8 +50,6 @@ const QuestionnairesTable = ({
       header: 'Owner',
       width: '100px',
       render: (questionnaire) => {
-        // For now, display a placeholder avatar
-        // In the future, this will use real user data
         return (
           <div className='flex items-center'>
             <div className='w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center'>

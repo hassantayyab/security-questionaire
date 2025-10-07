@@ -14,6 +14,7 @@ interface QuestionnaireDetailViewProps {
   onBack: () => void;
   onExport: () => void;
   approvedCount: number;
+  answeredCount: number;
   totalCount: number;
   isGenerating?: boolean;
   generationProgress?: {
@@ -30,19 +31,17 @@ const QuestionnaireDetailView = ({
   onBack,
   onExport,
   approvedCount,
+  answeredCount,
   totalCount,
   isGenerating = false,
   generationProgress = null,
   children,
 }: QuestionnaireDetailViewProps) => {
-  // Check if all questions are approved
   const isCompleted = totalCount > 0 && approvedCount === totalCount;
 
   return (
     <div className='space-y-4'>
-      {/* Header Section */}
       <div className='space-y-4'>
-        {/* Breadcrumb and Title Section */}
         <div className='space-y-4'>
           <Link
             href='/questionnaire'
@@ -51,10 +50,8 @@ const QuestionnaireDetailView = ({
             Questionnaires
           </Link>
 
-          {/* Title and Actions */}
           <div className='flex items-start justify-between'>
             <div className='space-y-1 flex-1 max-w-[420px]'>
-              {/* Title with Status Badge */}
               <div className='flex items-center gap-3'>
                 <h1 className='text-sm font-medium text-gray-900 leading-5'>
                   {questionnaire.name}
@@ -80,7 +77,6 @@ const QuestionnaireDetailView = ({
               </p>
             </div>
 
-            {/* Export Button */}
             {approvedCount > 0 && (
               <button
                 onClick={onExport}
@@ -94,22 +90,18 @@ const QuestionnaireDetailView = ({
         </div>
       </div>
 
-      {/* Search and Progress Section */}
-      <div className='flex items-center justify-between w-full'>
-        <div className='w-64'>
+      <div className='flex items-center justify-between w-full gap-4'>
+        <div className='w-64 flex-shrink-0'>
           <SearchField placeholder='Search' value={searchTerm} onChange={onSearchChange} />
         </div>
 
-        {/* AI Generation Progress (right-aligned) - Always show when progress data exists */}
-        {generationProgress && (
-          <AIGenerationProgress
-            completed={generationProgress.completed}
-            total={generationProgress.total}
-          />
+        {totalCount > 0 && (
+          <div className='flex-shrink-0'>
+            <AIGenerationProgress completed={approvedCount} total={totalCount} />
+          </div>
         )}
       </div>
 
-      {/* Content (Questions Table will be passed as children) */}
       {children}
     </div>
   );

@@ -40,11 +40,9 @@ export const ImportQuestionnaireDialog = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const dropzoneId = useId();
 
-  // Reset all state when dialog closes
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       if (!newOpen) {
-        // Reset state when closing
         setCurrentStep('upload');
         setSelectedFile(null);
         setParsedData(null);
@@ -65,7 +63,6 @@ export const ImportQuestionnaireDialog = ({
       return;
     }
 
-    // Validate file
     const validation = validateExcelFile(file);
     if (!validation.valid) {
       setErrorMessage(validation.error || 'Invalid file');
@@ -77,11 +74,9 @@ export const ImportQuestionnaireDialog = ({
     setIsProcessing(true);
 
     try {
-      // Parse Excel file
       const data = await parseExcelFile(file);
       setParsedData(data);
 
-      // Auto-select first two columns if available
       if (data.headers.length >= 2) {
         setColumnMapping({
           questionColumn: data.headers[0],
@@ -94,7 +89,6 @@ export const ImportQuestionnaireDialog = ({
         });
       }
 
-      // Move to mapping step
       setCurrentStep('mapping');
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to parse Excel file');
@@ -158,7 +152,6 @@ export const ImportQuestionnaireDialog = ({
       return;
     }
 
-    // Map rows to answers
     const answers = mapRowsToAnswers(parsedData.rows, columnMapping);
     setMappedAnswers(answers);
     setCurrentStep('preview');
@@ -169,7 +162,6 @@ export const ImportQuestionnaireDialog = ({
       return;
     }
 
-    // Validate before import
     const validation = validateAnswers(mappedAnswers);
 
     if (!validation.valid) {
@@ -181,7 +173,6 @@ export const ImportQuestionnaireDialog = ({
     setIsProcessing(true);
 
     try {
-      // Convert to format expected by API
       const answersToImport = validation.validAnswers.map((item) => ({
         question: item.question,
         answer: item.answer,
@@ -189,7 +180,6 @@ export const ImportQuestionnaireDialog = ({
 
       await onImport(answersToImport);
 
-      // Success - close dialog
       handleOpenChange(false);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to import answers');
@@ -210,9 +200,6 @@ export const ImportQuestionnaireDialog = ({
         return (
           <div className='space-y-6'>
             <div className='space-y-2'>
-              <p className='text-xs font-medium uppercase tracking-wide text-gray-700'>
-                Excel File
-              </p>
               <div
                 role='button'
                 tabIndex={0}
@@ -277,7 +264,6 @@ export const ImportQuestionnaireDialog = ({
       case 'mapping':
         return (
           <div className='space-y-6'>
-            {/* File Info */}
             <div className='flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 p-3'>
               <div className='flex items-center gap-3'>
                 <span className='flex h-10 w-10 items-center justify-center rounded-md bg-violet-600/10'>
@@ -300,7 +286,6 @@ export const ImportQuestionnaireDialog = ({
               </Button>
             </div>
 
-            {/* Column Selection */}
             <div className='space-y-4'>
               <div>
                 <p className='text-xs font-medium uppercase tracking-wide text-gray-700 mb-3'>
@@ -311,7 +296,6 @@ export const ImportQuestionnaireDialog = ({
                 </p>
               </div>
 
-              {/* Question Column */}
               <div className='space-y-2'>
                 <label className='text-sm font-medium text-gray-700'>Question Column</label>
                 <select
@@ -328,7 +312,6 @@ export const ImportQuestionnaireDialog = ({
                 </select>
               </div>
 
-              {/* Answer Column */}
               <div className='space-y-2'>
                 <label className='text-sm font-medium text-gray-700'>Answer Column</label>
                 <select
@@ -366,7 +349,6 @@ export const ImportQuestionnaireDialog = ({
 
         return (
           <div className='space-y-6'>
-            {/* Summary */}
             <div className='rounded-md border border-gray-200 bg-gray-50 p-4'>
               <div className='flex items-start gap-3'>
                 <CheckCircle2 className='h-5 w-5 text-green-600 mt-0.5' />
@@ -386,7 +368,6 @@ export const ImportQuestionnaireDialog = ({
               </div>
             </div>
 
-            {/* Validation Errors */}
             {validation.errors.length > 0 && (
               <div className='rounded-md border border-red-200 bg-red-50 p-4'>
                 <div className='flex items-start gap-3'>
@@ -408,7 +389,6 @@ export const ImportQuestionnaireDialog = ({
               </div>
             )}
 
-            {/* Preview */}
             {previewItems.length > 0 && (
               <div className='space-y-3'>
                 <p className='text-xs font-medium uppercase tracking-wide text-gray-700'>

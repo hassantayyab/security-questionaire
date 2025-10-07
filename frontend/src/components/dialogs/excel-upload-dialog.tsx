@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { appConfig } from '@/config/app';
 import { api, ApiError } from '@/lib/api';
 import { AlertCircle, FileSpreadsheet } from 'lucide-react';
@@ -137,10 +136,6 @@ export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDial
       <div className='flex flex-col gap-5'>
         {/* Document Upload Section */}
         <div className='flex flex-col gap-1 w-full'>
-          <div className='flex gap-1 items-center'>
-            <Label className='text-xs font-medium text-gray-700'>Excel File</Label>
-          </div>
-
           <div
             className={`bg-gray-50 border-2 border-dashed rounded-lg flex flex-col gap-2 h-[120px] items-center justify-center px-6 py-8 w-full cursor-pointer hover:bg-gray-100 transition-colors ${
               error ? 'border-red-300 bg-red-50' : 'border-gray-300'
