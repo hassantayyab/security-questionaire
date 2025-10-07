@@ -53,7 +53,7 @@ const KnowledgeBaseTable = ({
           />
         ) : (
           <div className='w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center'>
-            <span className='text-xs font-medium text-gray-600'>
+            <span className='font-medium text-gray-600'>
               {policy.owner?.name?.charAt(0) || '?'}
             </span>
           </div>
@@ -64,9 +64,7 @@ const KnowledgeBaseTable = ({
       header: 'Upload date',
       width: '120px',
       render: (policy) => (
-        <span className='text-xs text-gray-900 whitespace-nowrap'>
-          {formatDate(policy.upload_date)}
-        </span>
+        <span className='text-gray-900 whitespace-nowrap'>{formatDate(policy.upload_date)}</span>
       ),
     },
     {
@@ -74,7 +72,7 @@ const KnowledgeBaseTable = ({
       header: 'Use in questionnaire',
       width: '180px',
       render: (policy) => (
-        <span className='text-xs text-gray-900 whitespace-nowrap'>
+        <span className='text-gray-900 whitespace-nowrap'>
           {policy.use_in_questionnaire ? 'Yes' : 'No'}
         </span>
       ),

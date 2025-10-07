@@ -14,6 +14,8 @@ const badgeVariants = cva(
         destructive:
           'border-transparent bg-red-500 text-white [a&]:hover:bg-red-500/90 focus-visible:ring-red-500/20',
         outline: 'text-gray-900 [a&]:hover:bg-gray-100 [a&]:hover:text-gray-900',
+        approved: 'bg-emerald-100 border-emerald-200 text-emerald-800',
+        pending: 'bg-gray-100 border-transparent text-gray-600',
       },
     },
     defaultVariants: {

@@ -2,6 +2,7 @@
 
 import AIGenerationProgress from '@/components/AIGenerationProgress';
 import SearchField from '@/components/SearchField';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Questionnaire } from '@/types';
 import { Clock, Download, Loader2, Sparkles, X } from 'lucide-react';
@@ -62,18 +63,14 @@ const QuestionnaireDetailView = ({
                   {questionnaire.name}
                 </h1>
                 {isCompleted ? (
-                  <div className='bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-[10px] flex items-center justify-center'>
-                    <span className='text-xs text-emerald-800 font-normal text-center whitespace-nowrap'>
-                      Completed
-                    </span>
-                  </div>
+                  <Badge variant='approved' className='rounded-[10px] px-2.5'>
+                    Completed
+                  </Badge>
                 ) : (
-                  <div className='bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-[10px] flex items-center gap-1'>
-                    <Clock className='w-[11.2px] h-[11.2px] text-gray-600' />
-                    <span className='text-xs text-gray-600 font-normal text-center whitespace-nowrap'>
-                      In progress
-                    </span>
-                  </div>
+                  <Badge variant='pending' className='rounded-[10px] border border-gray-200'>
+                    <Clock className='w-[11.2px] h-[11.2px]' />
+                    In progress
+                  </Badge>
                 )}
               </div>
               <p className='text-xs text-gray-500 leading-4'>

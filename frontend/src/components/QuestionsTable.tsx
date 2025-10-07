@@ -1,6 +1,7 @@
 'use client';
 
 import { GenericTable, TableAction, TableColumn } from '@/components/tables';
+import { Badge } from '@/components/ui/badge';
 import { Question } from '@/types';
 import { Check, ClipboardCopy, Edit, RefreshCw, RotateCcw, Sparkles, User } from 'lucide-react';
 import { ReactNode } from 'react';
@@ -176,15 +177,9 @@ const QuestionsTable = ({
       render: (question) => {
         const isApproved = question.status === 'approved';
         return (
-          <div
-            className={`inline-flex items-center justify-center px-2 py-0.5 rounded-[10px] text-xs text-center ${
-              isApproved
-                ? 'bg-emerald-100 border border-emerald-200 text-emerald-800'
-                : 'bg-gray-100 text-gray-600'
-            }`}
-          >
+          <Badge variant={isApproved ? 'approved' : 'pending'} className='rounded-[10px]'>
             {isApproved ? 'Approved' : 'Needs approval'}
-          </div>
+          </Badge>
         );
       },
     },

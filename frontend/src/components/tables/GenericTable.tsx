@@ -123,7 +123,10 @@ const GenericTable = <T,>({
             {currentData.map((item) => {
               const itemId = getRowId(item);
               return (
-                <tr key={itemId} className='h-[70px] border-b border-gray-200 last:border-b-0'>
+                <tr
+                  key={itemId}
+                  className='h-[70px] border-b border-gray-200 last:border-b-0 text-sm'
+                >
                   {showCheckbox && (
                     <td className='px-4'>
                       <div className='flex items-center gap-5'>
