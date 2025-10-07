@@ -231,12 +231,19 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
   const saveAnswer = async (questionId: string) => {
     try {
-      await api.updateAnswer(questionId, editingAnswer);
+      await api.updateAnswer(questionId, editingAnswer, 'unapproved', 'user');
       toast.success('Answer updated');
 
       setQuestions((prev) =>
         prev.map((q) =>
-          q.id === questionId ? { ...q, answer: editingAnswer, status: 'unapproved' as const } : q,
+          q.id === questionId
+            ? {
+                ...q,
+                answer: editingAnswer,
+                status: 'unapproved' as const,
+                answer_source: 'user' as const,
+              }
+            : q,
         ),
       );
 

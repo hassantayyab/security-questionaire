@@ -1,6 +1,7 @@
 'use client';
 
 import AppButton from '@/components/AppButton';
+import { FileCard } from '@/components/FileCard';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { appConfig } from '@/config/app';
 import { api } from '@/lib/api';
-import { AlertCircle, FileText, X } from 'lucide-react';
+import { AlertCircle, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -240,34 +241,13 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
                 </div>
                 <div className='flex flex-col gap-2'>
                   {uploadedFiles.map((file, index) => (
-                    <div
+                    <FileCard
                       key={`${file.name}-${index}`}
-                      className='flex items-center justify-between gap-3 p-3 bg-white border border-gray-200 rounded-lg group hover:border-gray-300 transition-colors'
-                    >
-                      <div className='flex items-center gap-2 flex-1 min-w-0'>
-                        <FileText className='w-5 h-5 text-gray-500 flex-shrink-0' />
-                        <div className='flex flex-col gap-0.5 min-w-0 flex-1'>
-                          <p
-                            className='text-sm font-medium text-gray-900 truncate'
-                            title={file.name}
-                          >
-                            {file.name}
-                          </p>
-                          <p className='text-xs text-gray-500'>{formatFileSize(file.size)}</p>
-                        </div>
-                      </div>
-                      <button
-                        type='button'
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveFile(file);
-                        }}
-                        disabled={isUploading}
-                        className='h-6 w-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex-shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
-                      >
-                        <X className='h-4 w-4' />
-                      </button>
-                    </div>
+                      fileName={file.name}
+                      fileSize={formatFileSize(file.size)}
+                      onRemove={() => handleRemoveFile(file)}
+                      disabled={isUploading}
+                    />
                   ))}
                 </div>
               </div>

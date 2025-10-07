@@ -181,9 +181,22 @@ const QuestionsTable = ({
     if (answerSource === 'user') {
       // User added answer
       return (
-        <div className='flex items-center gap-2'>
-          <User className='w-3.5 h-3.5 text-gray-600 flex-shrink-0' />
-          <span className='text-sm text-gray-900 leading-5 line-clamp-2 flex-1'>N/A</span>
+        <div className='flex items-center gap-2 group'>
+          <div className='flex items-center gap-1.5 flex-1 min-w-0'>
+            <User className='w-3.5 h-3.5 text-gray-600 flex-shrink-0' />
+            <span className='text-sm text-gray-900 leading-5 line-clamp-2 flex-1'>
+              {question.answer}
+            </span>
+          </div>
+          <div className='flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity'>
+            <button
+              onClick={() => onEdit(question)}
+              className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
+              title='Edit answer'
+            >
+              <Edit className='w-4 h-4 text-gray-600' />
+            </button>
+          </div>
         </div>
       );
     }
@@ -191,9 +204,22 @@ const QuestionsTable = ({
     if (answerSource === 'copied') {
       // Copied from previous questionnaire
       return (
-        <div className='flex items-center gap-2'>
-          <ClipboardCopy className='w-3.5 h-3.5 text-gray-600 flex-shrink-0' />
-          <span className='text-sm text-gray-900 leading-5 line-clamp-2 flex-1'>No</span>
+        <div className='flex items-center gap-2 group'>
+          <div className='flex items-center gap-1.5 flex-1 min-w-0'>
+            <ClipboardCopy className='w-3.5 h-3.5 text-gray-600 flex-shrink-0' />
+            <span className='text-sm text-gray-900 leading-5 line-clamp-2 flex-1'>
+              {question.answer}
+            </span>
+          </div>
+          <div className='flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity'>
+            <button
+              onClick={() => onEdit(question)}
+              className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
+              title='Edit answer'
+            >
+              <Edit className='w-4 h-4 text-gray-600' />
+            </button>
+          </div>
         </div>
       );
     }

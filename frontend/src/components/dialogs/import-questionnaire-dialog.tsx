@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { FileCard } from '@/components/FileCard';
 import {
   formatFileSize,
   mapRowsToAnswers,
@@ -10,7 +10,7 @@ import {
 } from '@/lib/excel-parser';
 import { cn } from '@/lib/utils';
 import type { ColumnMapping, MappedAnswer, ParsedExcelData } from '@/types/excel';
-import { AlertCircle, CheckCircle2, FileText, Upload, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Upload } from 'lucide-react';
 import { useCallback, useId, useState } from 'react';
 import { StandardDialog } from './standard-dialog';
 
@@ -264,27 +264,11 @@ export const ImportQuestionnaireDialog = ({
       case 'mapping':
         return (
           <div className='space-y-6'>
-            <div className='flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 p-3'>
-              <div className='flex items-center gap-3'>
-                <span className='flex h-10 w-10 items-center justify-center rounded-md bg-violet-600/10'>
-                  <FileText className='h-5 w-5 text-violet-600' />
-                </span>
-                <div>
-                  <p className='text-sm font-medium text-gray-900'>{selectedFile?.name}</p>
-                  <p className='text-xs text-gray-500'>
-                    {parsedData?.rowCount} rows • {formatFileSize(selectedFile?.size || 0)}
-                  </p>
-                </div>
-              </div>
-              <Button
-                size='sm'
-                variant='ghost'
-                className='h-8 w-8 p-0 text-gray-500 hover:text-red-500 cursor-pointer'
-                onClick={handleRemoveFile}
-              >
-                <X className='h-4 w-4' />
-              </Button>
-            </div>
+            <FileCard
+              fileName={selectedFile?.name || ''}
+              fileSize={`${parsedData?.rowCount} rows • ${formatFileSize(selectedFile?.size || 0)}`}
+              onRemove={handleRemoveFile}
+            />
 
             <div className='space-y-4'>
               <div>

@@ -141,10 +141,19 @@ class ApiClient {
     });
   }
 
-  async updateAnswer(questionId: string, answer: string, status: string = 'unapproved') {
+  async updateAnswer(
+    questionId: string,
+    answer: string,
+    status: string = 'unapproved',
+    answerSource?: 'ai' | 'user' | 'copied' | 'not_found',
+  ) {
+    const body: Record<string, string> = { answer, status };
+    if (answerSource) {
+      body.answer_source = answerSource;
+    }
     return this.request<any>(`/questionnaires/questions/${questionId}/answer`, {
       method: 'PUT',
-      body: JSON.stringify({ answer, status }),
+      body: JSON.stringify(body),
     });
   }
 

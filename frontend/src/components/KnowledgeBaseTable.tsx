@@ -67,16 +67,6 @@ const KnowledgeBaseTable = ({
         <span className='text-gray-900 whitespace-nowrap'>{formatDate(policy.upload_date)}</span>
       ),
     },
-    {
-      key: 'use_in_questionnaire',
-      header: 'Use in questionnaire',
-      width: '180px',
-      render: (policy) => (
-        <span className='text-gray-900 whitespace-nowrap'>
-          {policy.use_in_questionnaire ? 'Yes' : 'No'}
-        </span>
-      ),
-    },
   ];
 
   const actions: TableAction<Policy>[] = [

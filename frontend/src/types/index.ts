@@ -11,7 +11,6 @@ export interface Policy {
     name: string;
     avatar?: string;
   };
-  use_in_questionnaire?: boolean;
 }
 
 export interface Questionnaire {

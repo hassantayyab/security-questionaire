@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class AnswerUpdate(BaseModel):
     answer: str
     status: str = "unapproved"
+    answer_source: str | None = None
 
 class QuestionnaireStatusUpdate(BaseModel):
     status: str
@@ -414,7 +415,8 @@ async def update_answer(
         await db_service.update_question_answer(
             question_id, 
             answer_update.answer, 
-            answer_update.status
+            answer_update.status,
+            answer_update.answer_source
         )
         
         return {

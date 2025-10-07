@@ -5,6 +5,7 @@ export { default as AppButton } from './AppButton';
 export { default as AppLayout } from './AppLayout';
 export { default as ApprovalProgress } from './ApprovalProgress';
 export { default as DataTable } from './DataTable';
+export { FileCard } from './FileCard';
 export { default as FileUpload } from './FileUpload';
 export { ApprovalStatusIcon } from './icons';
 export { default as KnowledgeBase, type KnowledgeBaseRef } from './KnowledgeBase';
