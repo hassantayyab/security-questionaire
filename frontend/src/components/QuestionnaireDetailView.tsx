@@ -1,12 +1,13 @@
 'use client';
 
 import ApprovalProgress from '@/components/ApprovalProgress';
+import { ApprovalStatusIcon } from '@/components/icons';
 import QuestionnaireStatusDropdown from '@/components/QuestionnaireStatusDropdown';
 import SearchField from '@/components/SearchField';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { Badge } from '@/components/ui/badge';
 import { Questionnaire } from '@/types';
-import { Clock, Download, Sparkles, X } from 'lucide-react';
+import { Clock, Download, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -22,8 +23,11 @@ interface QuestionnaireDetailViewProps {
   totalCount: number;
   isGenerating?: boolean;
   isLoading?: boolean;
+  generationProgress?: {
+    completed: number;
+    total: number;
+  } | null;
   onGenerateAnswers?: () => void;
-  onStopGeneration?: () => void;
   children?: ReactNode;
 }
 
@@ -39,8 +43,8 @@ const QuestionnaireDetailView = ({
   totalCount,
   isGenerating = false,
   isLoading = false,
+  generationProgress = null,
   onGenerateAnswers,
-  onStopGeneration,
   children,
 }: QuestionnaireDetailViewProps) => {
   // Get status from questionnaire, default to 'in_progress'
@@ -110,15 +114,6 @@ const QuestionnaireDetailView = ({
                   onStatusChange={onStatusChange}
                 />
               )}
-              {totalCount > 0 && onGenerateAnswers && !isGenerating && (
-                <button
-                  onClick={onGenerateAnswers}
-                  className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer'
-                >
-                  <Sparkles className='h-4 w-4' />
-                  Generate with Secfix Agent
-                </button>
-              )}
               <button
                 onClick={onExport}
                 className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer'
@@ -138,14 +133,28 @@ const QuestionnaireDetailView = ({
           <SearchField placeholder='Search' value={searchTerm} onChange={onSearchChange} />
         </div>
 
-        {/* Show Stop button when actively generating */}
-        {isGenerating && onStopGeneration && (
+        {/* Generate with Secfix Agent button */}
+        {totalCount > 0 && onGenerateAnswers && (
           <button
-            onClick={onStopGeneration}
-            className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer'
+            onClick={onGenerateAnswers}
+            disabled={isGenerating}
+            className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white'
           >
-            <X className='w-4 h-4' />
-            Stop Generation
+            {isGenerating && generationProgress ? (
+              <>
+                <ApprovalStatusIcon
+                  approved={generationProgress.completed}
+                  total={generationProgress.total}
+                  size={16}
+                />
+                Agent generating answers...
+              </>
+            ) : (
+              <>
+                <Sparkles className='h-4 w-4 text-violet-600' />
+                Generate with Secfix Agent
+              </>
+            )}
           </button>
         )}
       </div>

@@ -24,6 +24,10 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [generatingQuestionIds, setGeneratingQuestionIds] = useState<Set<string>>(new Set());
+  const [generationProgress, setGenerationProgress] = useState<{
+    total: number;
+    completed: number;
+  } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const isGeneratingRef = useRef(false);
 
@@ -37,7 +41,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Update generating question IDs whenever questions change during generation
+  // Update generating question IDs and progress whenever questions change during generation
   useEffect(() => {
     if (isGeneratingRef.current && questions.length > 0) {
       // Remove question IDs that now have answers from the generating set
@@ -49,6 +53,16 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
           }
         });
         return newSet;
+      });
+
+      // Update generation progress
+      const answeredCount = questions.filter(
+        (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
+      ).length;
+
+      setGenerationProgress({
+        total: questions.length,
+        completed: answeredCount,
       });
     }
   }, [questions]);
@@ -128,6 +142,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     }
     setIsGenerating(false);
     setGeneratingQuestionIds(new Set());
+    // Keep generationProgress to show final state
   }, [pollingInterval]);
 
   // Check if generation is complete during polling
@@ -157,6 +172,16 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     setGeneratingQuestionIds(new Set(questionsToGenerate.map((q) => q.id)));
     setIsGenerating(true);
 
+    // Initialize generation progress
+    const initialCompleted = questions.filter(
+      (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
+    ).length;
+
+    setGenerationProgress({
+      total: questions.length,
+      completed: initialCompleted,
+    });
+
     try {
       const response: GenerateAnswersResponse = await api.generateAnswers(questionnaire.id);
 
@@ -184,6 +209,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
         toast.error('Failed to start answer generation');
         setIsGenerating(false);
         setGeneratingQuestionIds(new Set());
+        setGenerationProgress(null);
       }
     } catch (error) {
       console.error('Generate answers error:', error);
@@ -194,6 +220,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
       }
       setIsGenerating(false);
       setGeneratingQuestionIds(new Set());
+      setGenerationProgress(null);
     }
   };
 
@@ -296,7 +323,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
   const handleGenerateSingleAnswer = async (question: Question) => {
     try {
-      // Mark this question as generating
+      // Mark this question as generating (don't update generationProgress for single questions)
       setGeneratingQuestionIds((prev) => new Set(prev).add(question.id));
 
       toast.info('Generating AI answer for this question...', {
@@ -343,7 +370,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
   const handleRegenerateAnswer = async (question: Question) => {
     try {
-      // Mark this question as generating
+      // Mark this question as generating (don't update generationProgress for single questions)
       setGeneratingQuestionIds((prev) => new Set(prev).add(question.id));
 
       toast.info('Regenerating AI answer...', {
@@ -606,8 +633,8 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
             totalCount={questions.length}
             isGenerating={isGenerating}
             isLoading={isLoading}
+            generationProgress={generationProgress}
             onGenerateAnswers={handleGenerateAnswers}
-            onStopGeneration={stopPolling}
           >
             {showTableSpinner ? (
               <LoadingSpinner />

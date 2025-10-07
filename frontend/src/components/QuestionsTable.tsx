@@ -88,14 +88,14 @@ const QuestionsTable = ({
           <div className='flex items-center gap-2'>
             <button
               onClick={() => onSaveAnswer?.(question.id)}
-              className='w-[30px] h-[30px] border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
+              className='w-[30px] h-[30px] border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent'
               title='Save answer'
             >
               <Check className='w-4 h-4 text-gray-600' />
             </button>
             <button
               onClick={() => onCancelEdit?.()}
-              className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
+              className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent'
               title='Cancel editing'
             >
               <X className='w-4 h-4 text-gray-600' />
