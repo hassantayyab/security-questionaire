@@ -77,15 +77,16 @@ const QuestionsTable = ({
     // If editing, show textarea with save/cancel buttons
     if (isEditing) {
       return (
-        <div className='flex items-center gap-2 w-full'>
+        <div className='flex items-center gap-2 mx-auto'>
           <textarea
             value={editingAnswer}
             onChange={(e) => onEditAnswerChange?.(e.target.value)}
-            className='flex-1 min-h-[60px] px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none transition-all'
+            className='flex-1 min-h-[45px] px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none transition-all ml-2.5 -my-1'
             placeholder='Enter answer...'
             autoFocus
+            rows={2}
           />
-          <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-3'>
             <button
               onClick={() => onSaveAnswer?.(question.id)}
               className='w-[30px] h-[30px] border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent'

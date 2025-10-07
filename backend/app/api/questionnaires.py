@@ -155,6 +155,61 @@ async def get_policies(settings: Settings = Depends(get_settings)) -> Dict[str, 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching policies: {str(e)}")
 
+
+class BulkDeletePolicies(BaseModel):
+    policy_ids: List[str]
+
+
+@router.delete("/policies/bulk-delete")
+async def bulk_delete_policies(
+    bulk_delete: BulkDeletePolicies,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Bulk delete multiple policies"""
+    try:
+        if not bulk_delete.policy_ids:
+            raise HTTPException(status_code=400, detail="No policy IDs provided")
+        
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        deleted_count = 0
+        errors = []
+        
+        for policy_id in bulk_delete.policy_ids:
+            try:
+                # Check if policy exists
+                policy = await db_service.get_policy_by_id(policy_id)
+                if not policy:
+                    errors.append(f"Policy {policy_id} not found")
+                    continue
+                
+                # Delete the policy
+                success = await db_service.delete_policy(policy_id)
+                if success:
+                    deleted_count += 1
+                else:
+                    errors.append(f"Failed to delete policy {policy_id}")
+            except Exception as e:
+                errors.append(f"Error deleting policy {policy_id}: {str(e)}")
+        
+        return {
+            "success": True,
+            "message": f"Deleted {deleted_count} resource{'s' if deleted_count != 1 else ''}",
+            "deleted_count": deleted_count,
+            "total_requested": len(bulk_delete.policy_ids),
+            "errors": errors
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in bulk delete policies: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error in bulk delete: {str(e)}")
+
+
 @router.delete("/policies/{policy_id}")
 async def delete_policy(
     policy_id: str,

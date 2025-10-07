@@ -32,17 +32,22 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         },
       ],
     },
-    {
-      heading: 'System',
-      items: [
-        {
-          id: 'debug',
-          label: 'Diagnostics',
-          icon: Activity,
-          href: '/debug',
-        },
-      ],
-    },
+    // Only show System section in development mode
+    ...(process.env.NODE_ENV === 'development'
+      ? [
+          {
+            heading: 'System',
+            items: [
+              {
+                id: 'debug',
+                label: 'Diagnostics',
+                icon: Activity,
+                href: '/debug',
+              },
+            ],
+          },
+        ]
+      : []),
   ];
 
   // Determine active item based on current pathname

@@ -30,6 +30,11 @@ class BulkAnswerCreate(BaseModel):
     answers: List[AnswerCreate]
 
 
+class BulkDeleteAnswers(BaseModel):
+    """Model for bulk deleting answers"""
+    answer_ids: List[str]
+
+
 @router.get("/")
 async def get_answers(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
     """
@@ -217,6 +222,63 @@ async def update_answer(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating answer: {str(e)}")
+
+
+@router.delete("/bulk-delete")
+async def bulk_delete_answers(
+    bulk_delete: BulkDeleteAnswers,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """
+    Bulk delete multiple answers from the library
+    
+    Args:
+        bulk_delete: List of answer IDs to delete
+        
+    Returns:
+        Deletion results with success/error counts
+    """
+    try:
+        if not bulk_delete.answer_ids:
+            raise HTTPException(status_code=400, detail="No answer IDs provided")
+        
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        deleted_count = 0
+        errors = []
+        
+        for answer_id in bulk_delete.answer_ids:
+            try:
+                # Check if answer exists
+                existing_answer = await db_service.get_answer_by_id(answer_id)
+                if not existing_answer:
+                    errors.append(f"Answer {answer_id} not found")
+                    continue
+                
+                # Delete the answer
+                success = await db_service.delete_answer(answer_id)
+                if success:
+                    deleted_count += 1
+                else:
+                    errors.append(f"Failed to delete answer {answer_id}")
+            except Exception as e:
+                errors.append(f"Error deleting answer {answer_id}: {str(e)}")
+        
+        return {
+            "success": True,
+            "message": f"Deleted {deleted_count} answer{'s' if deleted_count != 1 else ''}",
+            "deleted_count": deleted_count,
+            "total_requested": len(bulk_delete.answer_ids),
+            "errors": errors
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in bulk delete: {str(e)}")
 
 
 @router.delete("/{answer_id}")

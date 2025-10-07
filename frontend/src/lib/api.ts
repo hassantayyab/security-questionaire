@@ -213,6 +213,20 @@ class ApiClient {
       body: JSON.stringify({ answers }),
     });
   }
+
+  async bulkDeleteAnswers(answerIds: string[]) {
+    return this.request<any>('/answers/bulk-delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ answer_ids: answerIds }),
+    });
+  }
+
+  async bulkDeletePolicies(policyIds: string[]) {
+    return this.request<any>('/questionnaires/policies/bulk-delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ policy_ids: policyIds }),
+    });
+  }
 }
 
 export const api = new ApiClient();

@@ -2,6 +2,7 @@
 
 import AnswersLibraryTable from '@/components/AnswersLibraryTable';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { BannerActionButton, MultiSelectBanner } from '@/components/MultiSelectBanner';
 import SearchField from '@/components/SearchField';
 import { AddAnswerDialog, ImportQuestionnaireDialog } from '@/components/dialogs';
 import { api } from '@/lib/api';
@@ -152,6 +153,38 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const selectedCount = selectedRows.size;
+
+    if (!confirm(`Are you sure you want to delete ${selectedCount} answer${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const answerIds = Array.from(selectedRows);
+      const response = await api.bulkDeleteAnswers(answerIds);
+
+      if (response.success) {
+        // Refresh the answers list
+        await fetchAnswers();
+        // Clear selection
+        setSelectedRows(new Set());
+        toast.success(response.message);
+
+        if (response.errors && response.errors.length > 0) {
+          toast.warning(`Some answers could not be deleted`);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting answers:', error);
+      toast.error('Failed to delete answers');
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedRows(new Set());
+  };
+
   // Filter answers based on search term
   const filteredAnswers = answers.filter(
     (answer) =>
@@ -161,6 +194,15 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
 
   return (
     <div className='space-y-4'>
+      {/* Multi-Select Banner */}
+      <MultiSelectBanner
+        selectedCount={selectedRows.size}
+        itemType='answer'
+        onClose={handleClearSelection}
+      >
+        <BannerActionButton onClick={handleBulkDelete}>Delete</BannerActionButton>
+      </MultiSelectBanner>
+
       {/* Search and Action Buttons Section */}
       <div className='flex items-center justify-between w-full pt-4'>
         <div className='w-64'>

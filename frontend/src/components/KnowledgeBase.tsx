@@ -2,6 +2,7 @@
 
 import KnowledgeBaseTable from '@/components/KnowledgeBaseTable';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { BannerActionButton, MultiSelectBanner } from '@/components/MultiSelectBanner';
 import SearchField from '@/components/SearchField';
 import { Button } from '@/components/ui/button';
 import {
@@ -136,6 +137,42 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
     }
   };
 
+  const handleBulkDelete = async () => {
+    const selectedCount = selectedRows.size;
+
+    if (!confirm(`Are you sure you want to delete ${selectedCount} resource${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const policyIds = Array.from(selectedRows);
+      const response = await api.bulkDeletePolicies(policyIds);
+
+      if (response.success) {
+        // Reload policies from database
+        await loadPolicies();
+        // Clear selection
+        setSelectedRows(new Set());
+        toast.success(response.message);
+
+        if (response.errors && response.errors.length > 0) {
+          toast.warning(`Some resources could not be deleted`);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting policies:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to delete resources. Please try again.');
+      }
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedRows(new Set());
+  };
+
   const highlightSearchTerm = (text: string, searchTerm: string) => {
     if (!searchTerm.trim()) return text;
 
@@ -188,6 +225,15 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
 
   return (
     <div className='space-y-4'>
+      {/* Multi-Select Banner */}
+      <MultiSelectBanner
+        selectedCount={selectedRows.size}
+        itemType='resource'
+        onClose={handleClearSelection}
+      >
+        <BannerActionButton onClick={handleBulkDelete}>Delete</BannerActionButton>
+      </MultiSelectBanner>
+
       {/* Search and Upload Section */}
       <div className='flex items-center justify-between w-full pt-4'>
         <div className='w-64'>
