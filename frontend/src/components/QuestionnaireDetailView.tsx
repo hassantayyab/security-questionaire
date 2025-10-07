@@ -2,8 +2,9 @@
 
 import AIGenerationProgress from '@/components/AIGenerationProgress';
 import SearchField from '@/components/SearchField';
+import { Button } from '@/components/ui/button';
 import { Questionnaire } from '@/types';
-import { Clock, Download } from 'lucide-react';
+import { Clock, Download, Loader2, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -21,6 +22,8 @@ interface QuestionnaireDetailViewProps {
     completed: number;
     total: number;
   } | null;
+  onGenerateAnswers?: () => void;
+  onStopGeneration?: () => void;
   children?: ReactNode;
 }
 
@@ -35,6 +38,8 @@ const QuestionnaireDetailView = ({
   totalCount,
   isGenerating = false,
   generationProgress = null,
+  onGenerateAnswers,
+  onStopGeneration,
   children,
 }: QuestionnaireDetailViewProps) => {
   const isCompleted = totalCount > 0 && approvedCount === totalCount;
@@ -95,11 +100,44 @@ const QuestionnaireDetailView = ({
           <SearchField placeholder='Search' value={searchTerm} onChange={onSearchChange} />
         </div>
 
-        {totalCount > 0 && (
-          <div className='flex-shrink-0'>
-            <AIGenerationProgress completed={approvedCount} total={totalCount} />
-          </div>
-        )}
+        <div className='flex items-center gap-3 flex-shrink-0'>
+          {totalCount > 0 && onGenerateAnswers && (
+            <Button
+              onClick={onGenerateAnswers}
+              disabled={isGenerating}
+              className='gap-2 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20 transition-colors cursor-pointer'
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className='w-4 h-4 animate-spin' />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className='w-4 h-4' />
+                  Generate with AI
+                </>
+              )}
+            </Button>
+          )}
+
+          {isGenerating && onStopGeneration && (
+            <Button
+              variant='outline'
+              onClick={onStopGeneration}
+              className='gap-2 border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20 transition-colors cursor-pointer'
+            >
+              <X className='w-4 h-4' />
+              Stop Generation
+            </Button>
+          )}
+
+          {totalCount > 0 && (
+            <div className='flex-shrink-0'>
+              <AIGenerationProgress completed={approvedCount} total={totalCount} />
+            </div>
+          )}
+        </div>
       </div>
 
       {children}

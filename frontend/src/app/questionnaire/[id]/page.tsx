@@ -3,22 +3,10 @@
 import { AppLayout } from '@/components';
 import QuestionnaireDetailView from '@/components/QuestionnaireDetailView';
 import QuestionsTable from '@/components/QuestionsTable';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { api, ApiError } from '@/lib/api';
 import { GenerateAnswersResponse, Question, Questionnaire } from '@/types';
-import {
-  CheckCircle,
-  Download,
-  HelpCircle,
-  Loader2,
-  Search,
-  Sparkles,
-  X,
-  XCircle,
-} from 'lucide-react';
+import { HelpCircle, Loader2, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -347,8 +335,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     return questionMatch || answerMatch;
   });
 
-  const approvedCount = filteredQuestions.filter((q) => q.status === 'approved').length;
-  const unapprovedCount = filteredQuestions.filter((q) => q.status === 'unapproved').length;
+  const approvedCount = questions.filter((q) => q.status === 'approved').length;
 
   const answeredCount = questions.filter(
     (q) => q.answer && q.answer.trim() !== '' && q.answer !== null,
@@ -379,124 +366,46 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
             totalCount={questions.length}
             isGenerating={isGenerating}
             generationProgress={generationProgress}
+            onGenerateAnswers={handleGenerateAnswers}
+            onStopGeneration={() => stopPolling(true)}
           >
-            <Card>
-              <CardHeader>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <CardTitle className='flex items-center gap-2'>
-                      <HelpCircle className='w-5 h-5' />
-                      Questions & Answers
-                      <Badge variant='outline'>
-                        {searchTerm
-                          ? `${filteredQuestions.length}/${questions.length}`
-                          : `${questions.length} total`}
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription>
-                      Review, edit, and approve AI-generated answers for your questionnaire.
-                    </CardDescription>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    {questions.length > 0 && (
-                      <div className='flex items-center gap-2 text-sm'>
-                        <Badge className='gap-1 bg-violet-600 text-white border-violet-600'>
-                          <CheckCircle className='w-3 h-3' />
-                          {approvedCount} approved
-                        </Badge>
-                        <Badge variant='secondary' className='gap-1'>
-                          <XCircle className='w-3 h-3' />
-                          {unapprovedCount} pending
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
+            {questions.length === 0 ? (
+              <div className='text-center py-8 space-y-3'>
+                <HelpCircle className='w-12 h-12 text-gray-500 mx-auto' />
+                <div className='text-lg font-medium text-gray-500'>No questions found</div>
+                <div className='text-sm text-gray-500'>
+                  Upload an Excel questionnaire to get started
                 </div>
-              </CardHeader>
-              <CardContent>
-                {questions.length === 0 ? (
-                  <div className='text-center py-8 space-y-3'>
-                    <HelpCircle className='w-12 h-12 text-gray-500 mx-auto' />
-                    <div className='text-lg font-medium text-gray-500'>No questions found</div>
-                    <div className='text-sm text-gray-500'>
-                      Upload an Excel questionnaire to get started
-                    </div>
-                  </div>
-                ) : filteredQuestions.length === 0 && searchTerm ? (
-                  <div className='text-center py-8 space-y-3'>
-                    <Search className='w-12 h-12 text-gray-500 mx-auto' />
-                    <div className='text-lg font-medium text-gray-500'>
-                      No questions match your search
-                    </div>
-                    <div className='text-sm text-gray-500'>
-                      Try adjusting your search term or clear the search to see all questions
-                    </div>
-                  </div>
-                ) : (
-                  <div className='space-y-4'>
-                    <div className='flex items-center gap-2 flex-wrap'>
-                      <Button
-                        onClick={handleGenerateAnswers}
-                        disabled={isGenerating}
-                        className='gap-2 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20'
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className='w-4 h-4 animate-spin' />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className='w-4 h-4' />
-                            Generate AI Answers
-                          </>
-                        )}
-                      </Button>
-
-                      {isGenerating && (
-                        <Button
-                          variant='outline'
-                          onClick={() => stopPolling(true)}
-                          className='gap-2 border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
-                        >
-                          <X className='w-4 h-4' />
-                          Stop Generation
-                        </Button>
-                      )}
-
-                      {approvedCount > 0 && (
-                        <Button
-                          variant='outline'
-                          onClick={handleExport}
-                          className='gap-2 ml-auto border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20'
-                        >
-                          <Download className='w-4 h-4' />
-                          Export Approved ({approvedCount})
-                        </Button>
-                      )}
-                    </div>
-
-                    <QuestionsTable
-                      data={filteredQuestions}
-                      selectedRows={selectedQuestions}
-                      onRowSelect={toggleQuestionSelection}
-                      onSelectAll={(selected) => {
-                        if (selected) {
-                          setSelectedQuestions(new Set(filteredQuestions.map((q) => q.id)));
-                        } else {
-                          setSelectedQuestions(new Set());
-                        }
-                      }}
-                      onEdit={startEditing}
-                      onApprove={(question) => toggleApproval(question.id, question.status)}
-                      onUnapprove={(question) => toggleApproval(question.id, question.status)}
-                      onGenerateAI={handleGenerateSingleAnswer}
-                      onRegenerateAI={handleRegenerateAnswer}
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            ) : filteredQuestions.length === 0 && searchTerm ? (
+              <div className='text-center py-8 space-y-3'>
+                <Search className='w-12 h-12 text-gray-500 mx-auto' />
+                <div className='text-lg font-medium text-gray-500'>
+                  No questions match your search
+                </div>
+                <div className='text-sm text-gray-500'>
+                  Try adjusting your search term or clear the search to see all questions
+                </div>
+              </div>
+            ) : (
+              <QuestionsTable
+                data={filteredQuestions}
+                selectedRows={selectedQuestions}
+                onRowSelect={toggleQuestionSelection}
+                onSelectAll={(selected) => {
+                  if (selected) {
+                    setSelectedQuestions(new Set(filteredQuestions.map((q) => q.id)));
+                  } else {
+                    setSelectedQuestions(new Set());
+                  }
+                }}
+                onEdit={startEditing}
+                onApprove={(question) => toggleApproval(question.id, question.status)}
+                onUnapprove={(question) => toggleApproval(question.id, question.status)}
+                onGenerateAI={handleGenerateSingleAnswer}
+                onRegenerateAI={handleRegenerateAnswer}
+              />
+            )}
           </QuestionnaireDetailView>
         </div>
       </TooltipProvider>
