@@ -53,10 +53,8 @@ const QuestionnairesTable = ({
       render: (questionnaire) => {
         return (
           <div className='flex items-center'>
-            <div className='w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center'>
-              <span className='text-xs font-medium text-violet-600'>
-                {questionnaire.owner?.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
+            <div className='w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center'>
+              <span className='text-xs font-medium text-gray-600'>?</span>
             </div>
           </div>
         );
@@ -65,17 +63,16 @@ const QuestionnairesTable = ({
     {
       key: 'approved_count',
       header: 'Approved answers',
-      width: '120px',
+      width: '150px',
       render: (questionnaire) => {
         const approved = questionnaire.approved_count || 0;
         const total = questionnaire.question_count || 0;
+        const percentage = total > 0 ? Math.round((approved / total) * 100) : 0;
 
         return (
           <div className='flex items-center gap-2'>
             <ApprovalStatusIcon approved={approved} total={total} />
-            <span className='text-xs text-gray-900'>
-              {approved}/{total}
-            </span>
+            <span className='text-xs text-gray-900'>{percentage}%</span>
           </div>
         );
       },

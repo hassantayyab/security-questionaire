@@ -1,5 +1,6 @@
 'use client';
 
+import SkeletonLoader from '@/components/SkeletonLoader';
 import { GenericTable, TableAction, TableColumn, TableInlineAction } from '@/components/tables';
 import { Badge } from '@/components/ui/badge';
 import { Question } from '@/types';
@@ -22,6 +23,7 @@ interface QuestionsTableProps {
   onEditAnswerChange?: (value: string) => void;
   onSaveAnswer?: (questionId: string) => void;
   onCancelEdit?: () => void;
+  generatingQuestionIds?: Set<string>;
 }
 
 const QuestionsTable = ({
@@ -40,6 +42,7 @@ const QuestionsTable = ({
   onEditAnswerChange,
   onSaveAnswer,
   onCancelEdit,
+  generatingQuestionIds = new Set(),
 }: QuestionsTableProps) => {
   // Format date as DD.MM.YYYY
   const formatDate = (dateString: string) => {
@@ -52,6 +55,22 @@ const QuestionsTable = ({
 
   // Render answer source indicator with tooltip
   const renderAnswerWithSource = (question: Question): ReactNode => {
+    // Check if this question is currently being generated
+    const isGenerating = generatingQuestionIds.has(question.id);
+
+    // Show skeleton loader with sparkles icon if generating
+    if (isGenerating) {
+      return (
+        <div className='flex items-start gap-2'>
+          <Sparkles className='w-3.5 h-3.5 text-violet-600 flex-shrink-0 mt-[2px]' />
+          <div className='flex flex-col gap-2 py-[2px] flex-1'>
+            <SkeletonLoader width='100%' height='16px' />
+            <SkeletonLoader width='80%' height='16px' />
+          </div>
+        </div>
+      );
+    }
+
     // Check if this question is being edited
     const isEditing = editingQuestionId === question.id;
 
@@ -62,17 +81,17 @@ const QuestionsTable = ({
           <textarea
             value={editingAnswer}
             onChange={(e) => onEditAnswerChange?.(e.target.value)}
-            className='flex-1 min-h-[60px] px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none transition-all'
+            className='flex-1 min-h-[60px] px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none transition-all'
             placeholder='Enter answer...'
             autoFocus
           />
           <div className='flex items-center gap-2'>
             <button
               onClick={() => onSaveAnswer?.(question.id)}
-              className='w-[30px] h-[30px] border border-green-600 rounded bg-green-50 flex items-center justify-center hover:bg-green-100 transition-colors cursor-pointer'
+              className='w-[30px] h-[30px] border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
               title='Save answer'
             >
-              <Check className='w-4 h-4 text-green-600' />
+              <Check className='w-4 h-4 text-gray-600' />
             </button>
             <button
               onClick={() => onCancelEdit?.()}
@@ -207,10 +226,8 @@ const QuestionsTable = ({
         // Display owner avatar
         return (
           <div className='flex items-center'>
-            <div className='w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center'>
-              <span className='text-xs font-medium text-violet-600'>
-                {question.owner?.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
+            <div className='w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center'>
+              <span className='text-xs font-medium text-gray-600'>?</span>
             </div>
           </div>
         );

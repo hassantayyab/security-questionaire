@@ -1,9 +1,9 @@
 'use client';
 
-import AIGenerationProgress from '@/components/AIGenerationProgress';
 import ApprovalProgress from '@/components/ApprovalProgress';
 import QuestionnaireStatusDropdown from '@/components/QuestionnaireStatusDropdown';
 import SearchField from '@/components/SearchField';
+import SkeletonLoader from '@/components/SkeletonLoader';
 import { Badge } from '@/components/ui/badge';
 import { Questionnaire } from '@/types';
 import { Clock, Download, Sparkles, X } from 'lucide-react';
@@ -21,10 +21,7 @@ interface QuestionnaireDetailViewProps {
   answeredCount: number;
   totalCount: number;
   isGenerating?: boolean;
-  generationProgress?: {
-    completed: number;
-    total: number;
-  } | null;
+  isLoading?: boolean;
   onGenerateAnswers?: () => void;
   onStopGeneration?: () => void;
   children?: ReactNode;
@@ -41,7 +38,7 @@ const QuestionnaireDetailView = ({
   answeredCount,
   totalCount,
   isGenerating = false,
-  generationProgress = null,
+  isLoading = false,
   onGenerateAnswers,
   onStopGeneration,
   children,
@@ -89,10 +86,16 @@ const QuestionnaireDetailView = ({
           <div className='flex items-start justify-between'>
             <div className='space-y-1 flex-1 max-w-[420px]'>
               <div className='flex items-center gap-3'>
-                <h1 className='text-sm font-medium text-gray-900 leading-5'>
-                  {questionnaire.name}
-                </h1>
-                {renderStatusBadge()}
+                {isLoading ? (
+                  <SkeletonLoader width='250px' height='20px' />
+                ) : (
+                  <>
+                    <h1 className='text-sm font-medium text-gray-900 leading-5'>
+                      {questionnaire.name}
+                    </h1>
+                    {renderStatusBadge()}
+                  </>
+                )}
               </div>
               <p className='text-xs text-gray-500 leading-4'>
                 You can generate answers with our AI or edit them manually. Once you&apos;re done,
@@ -107,7 +110,7 @@ const QuestionnaireDetailView = ({
                   onStatusChange={onStatusChange}
                 />
               )}
-              {totalCount > 0 && onGenerateAnswers && !isGenerating && !generationProgress && (
+              {totalCount > 0 && onGenerateAnswers && !isGenerating && (
                 <button
                   onClick={onGenerateAnswers}
                   className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer'
@@ -116,15 +119,13 @@ const QuestionnaireDetailView = ({
                   Generate with Secfix Agent
                 </button>
               )}
-              {approvedCount > 0 && (
-                <button
-                  onClick={onExport}
-                  className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer'
-                >
-                  <Download className='h-4 w-4' />
-                  Export
-                </button>
-              )}
+              <button
+                onClick={onExport}
+                className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer'
+              >
+                <Download className='h-4 w-4' />
+                Export
+              </button>
             </div>
           </div>
 
@@ -137,28 +138,16 @@ const QuestionnaireDetailView = ({
           <SearchField placeholder='Search' value={searchTerm} onChange={onSearchChange} />
         </div>
 
-        <div className='flex items-center gap-3 flex-shrink-0'>
-          {/* Show Stop button when actively generating */}
-          {isGenerating && onStopGeneration && (
-            <button
-              onClick={onStopGeneration}
-              className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer'
-            >
-              <X className='w-4 h-4' />
-              Stop Generation
-            </button>
-          )}
-
-          {/* Show progress bar when generating or when generation has been started */}
-          {totalCount > 0 && generationProgress && (
-            <div className='flex-shrink-0'>
-              <AIGenerationProgress
-                completed={generationProgress.completed}
-                total={generationProgress.total}
-              />
-            </div>
-          )}
-        </div>
+        {/* Show Stop button when actively generating */}
+        {isGenerating && onStopGeneration && (
+          <button
+            onClick={onStopGeneration}
+            className='bg-white border border-gray-300 text-gray-700 px-3 py-[7px] rounded text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer'
+          >
+            <X className='w-4 h-4' />
+            Stop Generation
+          </button>
+        )}
       </div>
 
       {children}

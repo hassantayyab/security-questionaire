@@ -20,6 +20,7 @@ export { default as QuestionsAnswers } from './QuestionsAnswers';
 export { default as QuestionsTable } from './QuestionsTable';
 export { default as SearchField } from './SearchField';
 export { SidebarNavigation, SidebarNavigationItem, SidebarNavigationSection } from './sidebar';
+export { default as SkeletonLoader } from './SkeletonLoader';
 export { SystemHealthCheck } from './SystemHealthCheck';
 export { GenericTable } from './tables';
 export { default as TabNavigation } from './TabNavigation';

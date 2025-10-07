@@ -23,12 +23,8 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   const [editingAnswer, setEditingAnswer] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-  const [generationProgress, setGenerationProgress] = useState<{
-    total: number;
-    completed: number;
-  } | null>(null);
+  const [generatingQuestionIds, setGeneratingQuestionIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-  const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
   const isGeneratingRef = useRef(false);
 
   // Keep ref in sync with state
@@ -41,22 +37,21 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Update generation progress whenever questions change, but only if generation has been started
+  // Update generating question IDs whenever questions change during generation
   useEffect(() => {
-    if (questions.length > 0 && hasStartedGeneration) {
-      const answeredCount = questions.filter(
-        (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
-      ).length;
-
-      // Show progress only after generation has been started
-      setGenerationProgress({
-        total: questions.length,
-        completed: answeredCount,
+    if (isGeneratingRef.current && questions.length > 0) {
+      // Remove question IDs that now have answers from the generating set
+      setGeneratingQuestionIds((prev) => {
+        const newSet = new Set(prev);
+        questions.forEach((q) => {
+          if (q.answer && q.answer.trim() !== '' && q.answer !== null) {
+            newSet.delete(q.id);
+          }
+        });
+        return newSet;
       });
-    } else if (!hasStartedGeneration) {
-      setGenerationProgress(null);
     }
-  }, [questions, hasStartedGeneration]);
+  }, [questions]);
 
   // Cleanup polling interval on unmount
   useEffect(() => {
@@ -107,43 +102,33 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     }
   };
 
-  const startPolling = (questionnaireId: string, totalQuestions: number) => {
+  const startPolling = (questionnaireId: string) => {
     if (pollingInterval) {
       clearInterval(pollingInterval);
     }
 
-    setGenerationProgress((prev) => ({
-      total: totalQuestions,
-      completed: prev?.completed || 0,
-    }));
-
     const interval = setInterval(() => {
       loadQuestions(questionnaireId);
-    }, 10000); // Poll every 10 seconds for faster updates
+    }, 3000); // Poll every 3 seconds for faster updates
 
     setPollingInterval(interval);
 
     setTimeout(() => {
       if (pollingInterval) {
-        stopPolling(true);
+        stopPolling();
         toast.warning('Answer generation timed out. Some answers may still be processing.');
       }
     }, 10 * 60 * 1000);
   };
 
-  const stopPolling = useCallback(
-    (clearProgressImmediately = false) => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        setPollingInterval(null);
-      }
-      setIsGenerating(false);
-
-      // Don't clear generationProgress anymore - let it persist to show final state
-      // The useEffect will keep it updated based on actual answered questions
-    },
-    [pollingInterval],
-  );
+  const stopPolling = useCallback(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+    setIsGenerating(false);
+    setGeneratingQuestionIds(new Set());
+  }, [pollingInterval]);
 
   // Check if generation is complete during polling
   useEffect(() => {
@@ -154,7 +139,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
       // Check if all questions have been answered
       if (questionsWithAnswers === questions.length && questionsWithAnswers > 0) {
-        stopPolling(false);
+        stopPolling();
         toast.success(`All ${questionsWithAnswers} answers have been generated!`);
       }
     }
@@ -163,18 +148,14 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   const handleGenerateAnswers = async () => {
     if (!questionnaire) return;
 
-    const initialCompleted = questions.filter(
-      (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
-    ).length;
+    // Identify questions that need answers generated
+    const questionsToGenerate = questions.filter(
+      (q: Question) => !q.answer || q.answer.trim() === '' || q.answer === null,
+    );
 
-    // Mark that generation has been started
-    setHasStartedGeneration(true);
+    // Mark these questions as generating
+    setGeneratingQuestionIds(new Set(questionsToGenerate.map((q) => q.id)));
     setIsGenerating(true);
-
-    setGenerationProgress({
-      total: questions.length,
-      completed: initialCompleted,
-    });
 
     try {
       const response: GenerateAnswersResponse = await api.generateAnswers(questionnaire.id);
@@ -182,13 +163,12 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
       if (response.success) {
         if (response.status === 'processing') {
           toast.success(response.message, {
-            description: 'Watch the progress below as answers are generated in real-time!',
+            description: 'Answers are being generated with AI!',
             duration: 5000,
           });
 
           // Start polling for real-time updates
-          const totalToGenerate = response.total_questions || questions.length;
-          startPolling(questionnaire.id, totalToGenerate);
+          startPolling(questionnaire.id);
         } else {
           toast.success(`Generated answers for ${response.generated_count || 0} questions`);
 
@@ -198,12 +178,12 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
           await loadQuestions(questionnaire.id);
           setIsGenerating(false);
-          // Keep generationProgress visible to show final state
+          setGeneratingQuestionIds(new Set());
         }
       } else {
         toast.error('Failed to start answer generation');
         setIsGenerating(false);
-        // Keep generationProgress visible to show current state
+        setGeneratingQuestionIds(new Set());
       }
     } catch (error) {
       console.error('Generate answers error:', error);
@@ -213,7 +193,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
         toast.error('Failed to start answer generation. Please try again.');
       }
       setIsGenerating(false);
-      // Keep generationProgress visible to show current state
+      setGeneratingQuestionIds(new Set());
     }
   };
 
@@ -316,6 +296,9 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
   const handleGenerateSingleAnswer = async (question: Question) => {
     try {
+      // Mark this question as generating
+      setGeneratingQuestionIds((prev) => new Set(prev).add(question.id));
+
       toast.info('Generating AI answer for this question...', {
         description: 'This may take a few seconds',
       });
@@ -348,11 +331,21 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
       } else {
         toast.error('Failed to generate answer. Please try again.');
       }
+    } finally {
+      // Remove from generating set
+      setGeneratingQuestionIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(question.id);
+        return newSet;
+      });
     }
   };
 
   const handleRegenerateAnswer = async (question: Question) => {
     try {
+      // Mark this question as generating
+      setGeneratingQuestionIds((prev) => new Set(prev).add(question.id));
+
       toast.info('Regenerating AI answer...', {
         description: 'This may take a few seconds',
       });
@@ -385,6 +378,13 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
       } else {
         toast.error('Failed to regenerate answer. Please try again.');
       }
+    } finally {
+      // Remove from generating set
+      setGeneratingQuestionIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(question.id);
+        return newSet;
+      });
     }
   };
 
@@ -605,9 +605,9 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
             answeredCount={answeredCount}
             totalCount={questions.length}
             isGenerating={isGenerating}
-            generationProgress={generationProgress}
+            isLoading={isLoading}
             onGenerateAnswers={handleGenerateAnswers}
-            onStopGeneration={() => stopPolling(true)}
+            onStopGeneration={stopPolling}
           >
             {showTableSpinner ? (
               <LoadingSpinner />
@@ -650,6 +650,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
                 onEditAnswerChange={setEditingAnswer}
                 onSaveAnswer={saveAnswer}
                 onCancelEdit={cancelEditing}
+                generatingQuestionIds={generatingQuestionIds}
               />
             )}
           </QuestionnaireDetailView>

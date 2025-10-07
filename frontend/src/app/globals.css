@@ -88,7 +88,7 @@
     animation: glow 2s ease-in-out 3 alternate;
   }
 
-  /* Shimmer animation for progress bar */
+  /* Shimmer animation for skeleton loaders */
   @keyframes shimmer {
     0% {
       transform: translateX(-100%);
@@ -99,6 +99,6 @@
   }
 
   .animate-shimmer {
-    animation: shimmer 2s infinite;
+    animation: shimmer 1.5s ease-in-out infinite;
   }
 }
