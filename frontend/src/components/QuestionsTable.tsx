@@ -177,7 +177,7 @@ const QuestionsTable = ({
       render: (question) => {
         const isApproved = question.status === 'approved';
         return (
-          <Badge variant={isApproved ? 'approved' : 'pending'} className='rounded-[10px]'>
+          <Badge variant={isApproved ? 'approved' : 'pending'}>
             {isApproved ? 'Approved' : 'Needs approval'}
           </Badge>
         );

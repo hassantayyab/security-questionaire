@@ -67,7 +67,7 @@ const QuestionnaireDetailView = ({
                     Completed
                   </Badge>
                 ) : (
-                  <Badge variant='pending' className='rounded-[10px] border border-gray-200'>
+                  <Badge variant='pending'>
                     <Clock className='w-[11.2px] h-[11.2px]' />
                     In progress
                   </Badge>

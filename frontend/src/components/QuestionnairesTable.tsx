@@ -1,8 +1,8 @@
 'use client';
 
+import { ApprovalStatusIcon } from '@/components/icons';
 import { GenericTable, TableAction, TableColumn } from '@/components/tables';
 import { Questionnaire } from '@/types';
-import { CheckCircle } from 'lucide-react';
 
 interface QuestionnairesTableProps {
   data: Questionnaire[];
@@ -38,7 +38,7 @@ const QuestionnairesTable = ({
       width: '336px',
       render: (questionnaire) => (
         <div
-          className='text-sm text-gray-900 leading-5 line-clamp-2 cursor-pointer hover:text-violet-600 transition-colors'
+          className='text-sm text-gray-900 leading-5 line-clamp-2 cursor-pointer hover:text-violet-600 transition-colors hover:underline underline-offset-2'
           onClick={() => onView(questionnaire)}
         >
           {questionnaire.name}
@@ -68,11 +68,10 @@ const QuestionnairesTable = ({
       render: (questionnaire) => {
         const approved = questionnaire.approved_count || 0;
         const total = questionnaire.question_count || 0;
-        const isComplete = total > 0 && approved === total;
 
         return (
           <div className='flex items-center gap-2'>
-            <CheckCircle className={`w-4 h-4 ${isComplete ? 'text-green-500' : 'text-gray-400'}`} />
+            <ApprovalStatusIcon approved={approved} total={total} />
             <span className='text-xs text-gray-900'>
               {approved}/{total}
             </span>

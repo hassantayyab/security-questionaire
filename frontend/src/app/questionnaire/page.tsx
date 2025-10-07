@@ -5,7 +5,6 @@ import AppButton from '@/components/AppButton';
 import QuestionnairesTable from '@/components/QuestionnairesTable';
 import SearchField from '@/components/SearchField';
 import { ExcelUploadDialog } from '@/components/dialogs';
-import { Card, CardContent } from '@/components/ui/card';
 import { api, ApiError } from '@/lib/api';
 import { Questionnaire } from '@/types';
 import { FileSpreadsheet } from 'lucide-react';
@@ -136,30 +135,22 @@ export default function QuestionnairePage() {
             onDelete={handleDeleteQuestionnaire}
           />
         ) : questionnaires.length === 0 ? (
-          <Card>
-            <CardContent className='py-12'>
-              <div className='text-center space-y-3'>
-                <FileSpreadsheet className='w-12 h-12 text-gray-500 mx-auto' />
-                <div className='text-lg font-medium text-gray-500'>No questionnaires found</div>
-                <div className='text-sm text-gray-500'>
-                  Upload an Excel questionnaire to get started
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className='text-center space-y-3 py-12'>
+            <FileSpreadsheet className='w-12 h-12 text-gray-500 mx-auto' />
+            <div className='text-lg font-medium text-gray-500'>No questionnaires found</div>
+            <div className='text-sm text-gray-500'>
+              Upload an Excel questionnaire to get started
+            </div>
+          </div>
         ) : (
-          <Card>
-            <CardContent className='py-12'>
-              <div className='text-center space-y-3'>
-                <div className='text-lg font-medium text-gray-500'>
-                  No questionnaires match your search
-                </div>
-                <div className='text-sm text-gray-500'>
-                  Try adjusting your search term or clear the search to see all questionnaires
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className='text-center space-y-3 py-12'>
+            <div className='text-lg font-medium text-gray-500'>
+              No questionnaires match your search
+            </div>
+            <div className='text-sm text-gray-500'>
+              Try adjusting your search term or clear the search to see all questionnaires
+            </div>
+          </div>
         )}
       </div>
     </AppLayout>

@@ -161,16 +161,21 @@ class DatabaseService:
             raise Exception(f"Database error creating questionnaire: {str(e)}")
     
     async def get_all_questionnaires(self) -> List[Dict[str, Any]]:
-        """Get all questionnaires with question counts"""
+        """Get all questionnaires with question counts and approved counts"""
         try:
             # Get questionnaires
             questionnaires_result = self.client.table("questionnaires").select("*").order("created_at", desc=True).execute()
             questionnaires = questionnaires_result.data
             
-            # Get question counts for each questionnaire
+            # Get question counts and approved counts for each questionnaire
             for questionnaire in questionnaires:
+                # Get total question count
                 questions_result = self.client.table("questions").select("id").eq("questionnaire_id", questionnaire["id"]).execute()
                 questionnaire["question_count"] = len(questions_result.data)
+                
+                # Get approved question count
+                approved_result = self.client.table("questions").select("id").eq("questionnaire_id", questionnaire["id"]).eq("status", "approved").execute()
+                questionnaire["approved_count"] = len(approved_result.data)
             
             return questionnaires
         except Exception as e:
