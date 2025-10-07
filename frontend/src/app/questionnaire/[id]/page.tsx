@@ -1,12 +1,12 @@
 'use client';
 
-import { AppLayout } from '@/components';
+import { AppLayout, LoadingSpinner } from '@/components';
 import QuestionnaireDetailView from '@/components/QuestionnaireDetailView';
 import QuestionsTable from '@/components/QuestionsTable';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { api, ApiError } from '@/lib/api';
 import { GenerateAnswersResponse, Question, Questionnaire } from '@/types';
-import { HelpCircle, Loader2, Search } from 'lucide-react';
+import { HelpCircle, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -18,6 +18,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [editingAnswer, setEditingAnswer] = useState('');
@@ -96,6 +97,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
   const loadQuestions = async (questionnaireId: string) => {
     try {
+      setIsLoadingQuestions(true);
       const response = await api.getQuestions(questionnaireId);
       if (response.success) {
         const newQuestions = response.questions || [];
@@ -104,6 +106,8 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     } catch (error) {
       console.error('Error loading questions:', error);
       toast.error('Failed to load questions');
+    } finally {
+      setIsLoadingQuestions(false);
     }
   };
 
@@ -341,22 +345,25 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     (q) => q.answer && q.answer.trim() !== '' && q.answer !== null,
   ).length;
 
-  if (isLoading || !questionnaire) {
-    return (
-      <AppLayout>
-        <div className='flex items-center justify-center h-screen'>
-          <Loader2 className='w-8 h-8 animate-spin text-violet-600' />
-        </div>
-      </AppLayout>
-    );
-  }
+  // Show spinner ONLY in table area while loading questionnaire or questions
+  const showTableSpinner = isLoading || isLoadingQuestions;
+
+  // Create a placeholder questionnaire object if not loaded yet
+  const displayQuestionnaire = questionnaire || {
+    id: id,
+    name: 'Loading...',
+    filename: '',
+    upload_date: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 
   return (
     <AppLayout>
       <TooltipProvider delayDuration={500}>
         <div className='p-6 space-y-4'>
           <QuestionnaireDetailView
-            questionnaire={questionnaire}
+            questionnaire={displayQuestionnaire}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             onBack={handleBackToList}
@@ -369,7 +376,9 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
             onGenerateAnswers={handleGenerateAnswers}
             onStopGeneration={() => stopPolling(true)}
           >
-            {questions.length === 0 ? (
+            {showTableSpinner ? (
+              <LoadingSpinner />
+            ) : questions.length === 0 ? (
               <div className='text-center py-8 space-y-3'>
                 <HelpCircle className='w-12 h-12 text-gray-500 mx-auto' />
                 <div className='text-lg font-medium text-gray-500'>No questions found</div>

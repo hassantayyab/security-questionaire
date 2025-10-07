@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadingSpinner } from '@/components';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -91,11 +92,7 @@ export default function DataTable<T = any>({
   const hasActions = actions && (Array.isArray(actions) ? actions.length > 0 : true);
 
   if (isLoading) {
-    return (
-      <div className='flex items-center justify-center py-8'>
-        <div className='text-gray-500'>Loading...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (data.length === 0 && emptyState) {

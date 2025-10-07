@@ -1,6 +1,7 @@
 'use client';
 
 import AnswersLibraryTable from '@/components/AnswersLibraryTable';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import SearchField from '@/components/SearchField';
 import { AddAnswerDialog, ImportQuestionnaireDialog } from '@/components/dialogs';
 import { api } from '@/lib/api';
@@ -188,9 +189,7 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
 
       {/* Answers List */}
       {isLoading ? (
-        <div className='text-center py-8 space-y-3'>
-          <div className='text-base font-medium text-gray-500'>Loading answers...</div>
-        </div>
+        <LoadingSpinner />
       ) : answers.length === 0 ? (
         <div className='text-center py-8 space-y-3'>
           <FileText className='w-12 h-12 text-gray-500 mx-auto' />

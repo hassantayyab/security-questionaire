@@ -26,7 +26,7 @@ export default function KnowledgeBasePage() {
     <AppLayout>
       <div className='flex flex-col h-full'>
         {/* Header */}
-        <div className='bg-white px-6 py-6'>
+        <div className='px-6 py-6'>
           <div className='flex flex-col gap-1'>
             <h1 className='text-base font-semibold text-gray-900'>Knowledge base</h1>
             <p className='text-xs text-gray-500 leading-4'>
@@ -37,7 +37,7 @@ export default function KnowledgeBasePage() {
         </div>
 
         {/* Tabs */}
-        <div className='bg-white px-6'>
+        <div className='px-6'>
           <KnowledgeBaseTabs
             tabs={knowledgeBaseTabs}
             activeTab={activeKnowledgeBaseTab}
@@ -46,7 +46,7 @@ export default function KnowledgeBasePage() {
         </div>
 
         {/* Content */}
-        <div className='flex-1 bg-white px-6 pb-6'>
+        <div className='flex-1 px-6 pb-6'>
           <div className={activeKnowledgeBaseTab === 'resources' ? 'block' : 'hidden'}>
             <KnowledgeBase ref={knowledgeBaseRef} onCountChange={setKnowledgeBaseCount} />
           </div>

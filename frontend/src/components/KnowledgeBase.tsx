@@ -1,6 +1,7 @@
 'use client';
 
 import KnowledgeBaseTable from '@/components/KnowledgeBaseTable';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import SearchField from '@/components/SearchField';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { UploadDialog } from '@/components/UploadDialog';
 import { api, ApiError } from '@/lib/api';
 import { Policy } from '@/types';
-import { Copy, FileText, Loader2, Plus, Search } from 'lucide-react';
+import { Copy, FileText, Plus, Search } from 'lucide-react';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -206,10 +207,7 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
 
       {/* Policies List */}
       {isLoading ? (
-        <div className='flex items-center justify-center py-8'>
-          <Loader2 className='w-6 h-6 animate-spin mr-2' />
-          Loading documents...
-        </div>
+        <LoadingSpinner />
       ) : policies.length === 0 ? (
         <div className='text-center py-8 space-y-3'>
           <FileText className='w-12 h-12 text-gray-500 mx-auto' />

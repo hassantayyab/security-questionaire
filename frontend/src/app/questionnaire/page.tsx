@@ -1,6 +1,6 @@
 'use client';
 
-import { AppLayout } from '@/components';
+import { AppLayout, LoadingSpinner } from '@/components';
 import AppButton from '@/components/AppButton';
 import QuestionnairesTable from '@/components/QuestionnairesTable';
 import SearchField from '@/components/SearchField';
@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 export default function QuestionnairePage() {
   const router = useRouter();
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
-  const [, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedQuestionnaireRows, setSelectedQuestionnaireRows] = useState<Set<string>>(
     new Set(),
   );
@@ -124,7 +124,9 @@ export default function QuestionnairePage() {
         </div>
 
         {/* Questionnaires Table */}
-        {filteredQuestionnaires.length > 0 ? (
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : filteredQuestionnaires.length > 0 ? (
           <QuestionnairesTable
             data={filteredQuestionnaires}
             selectedRows={selectedQuestionnaireRows}

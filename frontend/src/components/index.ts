@@ -8,6 +8,7 @@ export { default as FileUpload } from './FileUpload';
 export { default as KnowledgeBase, type KnowledgeBaseRef } from './KnowledgeBase';
 export { default as KnowledgeBaseTable } from './KnowledgeBaseTable';
 export { default as KnowledgeBaseTabs } from './KnowledgeBaseTabs';
+export { LoadingSpinner } from './LoadingSpinner';
 export { default as Navbar } from './Navbar';
 export { default as QuestionnaireDetailView } from './QuestionnaireDetailView';
 export { default as QuestionnairesTable } from './QuestionnairesTable';

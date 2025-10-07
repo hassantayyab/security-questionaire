@@ -44,9 +44,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const activeItemId = getActiveItemId();
 
   return (
-    <div className='flex h-full bg-gray-50'>
+    <>
       {/* Sidebar Navigation */}
-      <aside className='w-56 shrink-0 bg-white'>
+      <aside className='w-56 shrink-0'>
         <SidebarNavigation
           sections={navigationSections}
           activeItemId={activeItemId}
@@ -55,8 +55,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       </aside>
 
       {/* Main Content */}
-      <main className='flex-1 overflow-auto'>{children}</main>
-    </div>
+      <div className='flex-1 overflow-auto'>{children}</div>
+    </>
   );
 };
 
