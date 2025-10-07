@@ -186,7 +186,7 @@ const QuestionsTable = ({
     {
       key: 'question_text',
       header: 'Question',
-      width: '240px',
+      width: '35%', // Flexible width to fill available space
       render: (question) => (
         <span className='text-sm text-gray-900 leading-5 line-clamp-2'>
           {question.question_text}
@@ -196,7 +196,7 @@ const QuestionsTable = ({
     {
       key: 'answer',
       header: 'Answer',
-      width: '232px',
+      width: '35%', // Flexible width to fill available space
       render: renderAnswerWithSource,
     },
     {

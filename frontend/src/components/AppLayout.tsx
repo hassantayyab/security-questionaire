@@ -67,7 +67,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       </aside>
 
       {/* Main Content */}
-      <div className='flex-1 overflow-auto'>{children}</div>
+      <div className='flex-1 overflow-auto max-w-[1440px]'>{children}</div>
     </>
   );
 };

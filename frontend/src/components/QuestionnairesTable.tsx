@@ -2,6 +2,7 @@
 
 import { ApprovalStatusIcon } from '@/components/icons';
 import { GenericTable, TableAction, TableColumn } from '@/components/tables';
+import { Badge } from '@/components/ui/badge';
 import { Questionnaire } from '@/types';
 
 interface QuestionnairesTableProps {
@@ -80,14 +81,23 @@ const QuestionnairesTable = ({
       },
     },
     {
-      key: 'approved_date',
-      header: 'Approved date',
+      key: 'status',
+      header: 'Status',
       width: '120px',
-      render: (questionnaire) => (
-        <span className='text-sm text-gray-900 whitespace-nowrap'>
-          {formatDate(questionnaire.approved_date)}
-        </span>
-      ),
+      render: (questionnaire) => {
+        const status = questionnaire.status || 'in_progress';
+
+        // Map status to badge variant and label
+        const statusConfig = {
+          approved: { variant: 'approved' as const, label: 'Approved' },
+          complete: { variant: 'approved' as const, label: 'Complete' },
+          in_progress: { variant: 'pending' as const, label: 'In progress' },
+        };
+
+        const config = statusConfig[status];
+
+        return <Badge variant={config.variant}>{config.label}</Badge>;
+      },
     },
     {
       key: 'upload_date',
