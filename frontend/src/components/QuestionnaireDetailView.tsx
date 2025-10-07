@@ -128,7 +128,6 @@ const QuestionnaireDetailView = ({
             </div>
           </div>
 
-          {/* Approval Progress Bar - Show when there are questions */}
           {totalCount > 0 && <ApprovalProgress approved={approvedCount} total={totalCount} />}
         </div>
       </div>
