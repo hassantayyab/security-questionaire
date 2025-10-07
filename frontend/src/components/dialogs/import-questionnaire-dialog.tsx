@@ -10,7 +10,7 @@ import {
 } from '@/lib/excel-parser';
 import { cn } from '@/lib/utils';
 import type { ColumnMapping, MappedAnswer, ParsedExcelData } from '@/types/excel';
-import { AlertCircle, CheckCircle2, Upload } from 'lucide-react';
+import { AlertCircle, CheckCircle2, FileText } from 'lucide-react';
 import { useCallback, useId, useState } from 'react';
 import { StandardDialog } from './standard-dialog';
 
@@ -198,66 +198,53 @@ export const ImportQuestionnaireDialog = ({
     switch (currentStep) {
       case 'upload':
         return (
-          <div className='space-y-6'>
-            <div className='space-y-2'>
-              <div
-                role='button'
-                tabIndex={0}
-                id={dropzoneId}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => document.getElementById(`${dropzoneId}-input`)?.click()}
-                className={cn(
-                  'flex flex-col items-center justify-center rounded-md border border-dashed border-gray-200 px-6 py-8 transition-colors cursor-pointer',
-                  'bg-white text-center shadow-none outline-none focus-visible:border-violet-600 focus-visible:ring-2 focus-visible:ring-violet-600/20 focus-visible:ring-offset-2',
-                  isDragging && 'border-violet-500 bg-violet-50',
-                  errorMessage && 'border-red-300 bg-red-50/40',
-                  selectedFile && 'items-start gap-4 text-left',
-                )}
-              >
-                <input
-                  id={`${dropzoneId}-input`}
-                  type='file'
-                  accept='.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel'
-                  className='hidden'
-                  onChange={handleFileInputChange}
-                />
+          <div className='flex flex-col gap-3 w-full'>
+            <div
+              role='button'
+              tabIndex={0}
+              id={dropzoneId}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() =>
+                !isProcessing && document.getElementById(`${dropzoneId}-input`)?.click()
+              }
+              className={cn(
+                'bg-gray-50 border-2 border-dashed rounded-lg flex flex-col gap-2 h-[120px] items-center justify-center px-6 py-8 w-full cursor-pointer hover:bg-gray-100 transition-colors',
+                errorMessage ? 'border-red-300 bg-red-50' : 'border-gray-300',
+                isProcessing && 'pointer-events-none opacity-50',
+              )}
+            >
+              <input
+                id={`${dropzoneId}-input`}
+                type='file'
+                accept='.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel'
+                className='hidden'
+                onChange={handleFileInputChange}
+              />
 
-                {isProcessing ? (
-                  <div className='flex items-center gap-3 text-violet-600'>
-                    <div className='h-5 w-5 animate-spin rounded-full border-2 border-violet-600 border-t-transparent' />
-                    <span className='text-sm font-medium'>Processing file...</span>
-                  </div>
-                ) : (
-                  <div className='space-y-2'>
-                    <div className='flex justify-center'>
-                      <Upload className='h-10 w-10 text-gray-400' />
-                    </div>
-                    <p className='text-sm'>
-                      <button
-                        type='button'
-                        className='font-medium text-violet-600 underline-offset-4 transition-colors hover:text-violet-500 cursor-pointer'
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          document.getElementById(`${dropzoneId}-input`)?.click();
-                        }}
-                      >
-                        Upload Excel file
-                      </button>{' '}
-                      <span className='text-gray-600'>or drag and drop</span>
-                    </p>
-                    <p className='text-xs text-gray-500'>.xlsx or .xls up to 5MB</p>
-                  </div>
-                )}
-              </div>
-              {errorMessage && (
-                <div className='flex items-start gap-2 text-xs text-red-600'>
-                  <AlertCircle className='h-4 w-4 mt-0.5 flex-shrink-0' />
-                  <span>{errorMessage}</span>
+              {isProcessing ? (
+                <div className='flex items-center gap-3 text-violet-600'>
+                  <div className='h-5 w-5 animate-spin rounded-full border-2 border-violet-600 border-t-transparent' />
+                  <span className='text-sm font-medium'>Processing file...</span>
+                </div>
+              ) : (
+                <div className='flex flex-col items-center gap-2'>
+                  <FileText className='h-8 w-8 text-gray-400' />
+                  <span className='text-sm font-medium text-gray-600'>
+                    <span className='text-violet-600 cursor-pointer'>Upload</span> or drag and drop
+                  </span>
+                  <span className='text-xs text-gray-500'>.xlsx or .xls up to 5MB</span>
                 </div>
               )}
             </div>
+
+            {errorMessage && (
+              <div className='flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md'>
+                <AlertCircle className='h-4 w-4 text-red-600 flex-shrink-0' />
+                <p className='text-sm text-red-600'>{errorMessage}</p>
+              </div>
+            )}
           </div>
         );
 
@@ -459,7 +446,7 @@ export const ImportQuestionnaireDialog = ({
       open={open}
       onOpenChange={handleOpenChange}
       title='Import Questionnaire'
-      maxWidth='sm:max-w-2xl'
+      maxWidth='max-w-2xl'
       onCancel={
         canGoBack
           ? () => setCurrentStep(currentStep === 'preview' ? 'mapping' : 'upload')
