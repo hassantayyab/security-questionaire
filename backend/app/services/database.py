@@ -285,6 +285,48 @@ class DatabaseService:
             logger.error(f"Error fetching approved questions for questionnaire {questionnaire_id}: {str(e)}")
             raise Exception(f"Database error fetching approved questions: {str(e)}")
     
+    async def delete_question(self, question_id: str) -> bool:
+        """Delete a single question by ID"""
+        try:
+            result = self.client.table("questions").delete().eq("id", question_id).execute()
+            return len(result.data) > 0
+        except Exception as e:
+            logger.error(f"Error deleting question {question_id}: {str(e)}")
+            raise Exception(f"Database error deleting question: {str(e)}")
+    
+    async def bulk_delete_questions(self, question_ids: List[str]) -> Dict[str, Any]:
+        """
+        Bulk delete multiple questions
+        
+        Args:
+            question_ids: List of question IDs to delete
+            
+        Returns:
+            Dictionary with success count and error details
+        """
+        try:
+            deleted_count = 0
+            errors = []
+            
+            for question_id in question_ids:
+                try:
+                    result = self.client.table("questions").delete().eq("id", question_id).execute()
+                    if len(result.data) > 0:
+                        deleted_count += 1
+                    else:
+                        errors.append(f"Question {question_id} not found")
+                except Exception as e:
+                    errors.append(f"Error deleting question {question_id}: {str(e)}")
+            
+            logger.info(f"Bulk deleted {deleted_count} questions")
+            return {
+                "deleted_count": deleted_count,
+                "errors": errors
+            }
+        except Exception as e:
+            logger.error(f"Error in bulk delete questions: {str(e)}")
+            raise Exception(f"Database error bulk deleting questions: {str(e)}")
+    
     # UTILITY OPERATIONS
     
     async def test_connection(self) -> bool:

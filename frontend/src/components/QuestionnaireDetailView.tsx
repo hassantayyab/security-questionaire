@@ -100,10 +100,7 @@ const QuestionnaireDetailView = ({
         <div className='flex items-center gap-3 flex-shrink-0'>
           {/* Show Generate button ONLY when not generating and no generation has started */}
           {totalCount > 0 && onGenerateAnswers && !isGenerating && !generationProgress && (
-            <Button
-              onClick={onGenerateAnswers}
-              className='gap-2 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20 transition-colors cursor-pointer'
-            >
+            <Button onClick={onGenerateAnswers}>
               <Sparkles className='w-4 h-4' />
               Generate with AI
             </Button>

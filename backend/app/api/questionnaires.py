@@ -112,6 +112,9 @@ class BulkApproval(BaseModel):
     question_ids: List[str]
     status: str
 
+class BulkDelete(BaseModel):
+    question_ids: List[str]
+
 @router.get("/")
 async def get_questionnaires(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
     """Get all questionnaires"""
@@ -374,6 +377,37 @@ async def bulk_approve_answers(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in bulk approval: {str(e)}")
+
+@router.delete("/questions/bulk-delete")
+async def bulk_delete_questions(
+    bulk_delete: BulkDelete,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Bulk delete multiple questions"""
+    try:
+        if not bulk_delete.question_ids:
+            raise HTTPException(status_code=400, detail="No question IDs provided")
+        
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        result = await db_service.bulk_delete_questions(bulk_delete.question_ids)
+        
+        return {
+            "success": True,
+            "message": f"Deleted {result['deleted_count']} question{'s' if result['deleted_count'] != 1 else ''}",
+            "deleted_count": result['deleted_count'],
+            "total_requested": len(bulk_delete.question_ids),
+            "errors": result['errors']
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in bulk delete: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error in bulk delete: {str(e)}")
 
 @router.post("/questions/{question_id}/generate-answer")
 async def generate_single_answer(

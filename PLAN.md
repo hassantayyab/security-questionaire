@@ -136,12 +136,14 @@ Building a security questionnaire application similar to Vanta that automaticall
 - [x] Add save/cancel editing actions
 - [x] Create approve/unapprove functionality UI
 - [x] Add bulk approval options
+- [x] Add bulk delete functionality
 
 **Backend:**
 
 - [x] Create endpoints for answer updates (/answers/{id})
 - [x] Create endpoints for status changes (/answers/{id}/approve)
-- [x] Implement bulk operations endpoint
+- [x] Implement bulk operations endpoint (approve/unapprove)
+- [x] Implement bulk delete endpoint (/questions/bulk-delete)
 - [x] Update answer status in database
 - [x] Add validation for answer updates
 

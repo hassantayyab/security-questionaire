@@ -16,10 +16,19 @@ export interface TableAction<T> {
   onClick: (item: T) => void;
 }
 
+export interface TableInlineAction<T> {
+  key: string;
+  icon: ReactNode;
+  onClick: (item: T) => void;
+  title: string;
+  show?: (item: T) => boolean;
+}
+
 interface GenericTableProps<T> {
   data: T[];
   columns: TableColumn<T>[];
   actions?: TableAction<T>[];
+  inlineActions?: TableInlineAction<T>[];
   selectedRows?: Set<string>;
   onRowSelect?: (id: string) => void;
   onSelectAll?: (selected: boolean) => void;
@@ -37,6 +46,7 @@ const GenericTable = <T,>({
   data,
   columns,
   actions = [],
+  inlineActions = [],
   selectedRows = new Set(),
   onRowSelect,
   onSelectAll,
@@ -114,7 +124,9 @@ const GenericTable = <T,>({
                   <span className='text-xs font-medium text-gray-900'>{column.header}</span>
                 </th>
               ))}
-              {actions.length > 0 && <th className='px-4 text-right w-[62px]'></th>}
+              {(actions.length > 0 || inlineActions.length > 0) && (
+                <th className='px-4 text-right'></th>
+              )}
             </tr>
           </thead>
 
@@ -145,18 +157,38 @@ const GenericTable = <T,>({
                       {column.render(item)}
                     </td>
                   ))}
-                  {actions.length > 0 && (
-                    <td className='px-4 w-[62px]'>
-                      <div className='flex items-center justify-end'>
-                        <button
-                          ref={(el) => {
-                            buttonRefs.current[itemId] = el;
-                          }}
-                          onClick={(e) => toggleMenu(itemId, e)}
-                          className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
-                        >
-                          <MoreHorizontal className='w-4 h-4 text-gray-600' />
-                        </button>
+                  {(actions.length > 0 || inlineActions.length > 0) && (
+                    <td className='px-4'>
+                      <div className='flex items-center justify-end gap-4'>
+                        {/* Inline Actions */}
+                        {inlineActions.map((inlineAction) => {
+                          const shouldShow = inlineAction.show ? inlineAction.show(item) : true;
+                          if (!shouldShow) return null;
+
+                          return (
+                            <button
+                              key={inlineAction.key}
+                              onClick={() => inlineAction.onClick(item)}
+                              className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
+                              title={inlineAction.title}
+                            >
+                              {inlineAction.icon}
+                            </button>
+                          );
+                        })}
+
+                        {/* Dots Menu Button */}
+                        {actions.length > 0 && (
+                          <button
+                            ref={(el) => {
+                              buttonRefs.current[itemId] = el;
+                            }}
+                            onClick={(e) => toggleMenu(itemId, e)}
+                            className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
+                          >
+                            <MoreHorizontal className='w-4 h-4 text-gray-600' />
+                          </button>
+                        )}
                       </div>
                     </td>
                   )}

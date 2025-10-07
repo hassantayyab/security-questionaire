@@ -1,9 +1,9 @@
 'use client';
 
-import { GenericTable, TableAction, TableColumn } from '@/components/tables';
+import { GenericTable, TableAction, TableColumn, TableInlineAction } from '@/components/tables';
 import { Badge } from '@/components/ui/badge';
 import { Question } from '@/types';
-import { Check, ClipboardCopy, Edit, RefreshCw, Sparkles, User, X } from 'lucide-react';
+import { Check, ClipboardCopy, Edit, RefreshCw, Sparkles, Undo2, User, X } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface QuestionsTableProps {
@@ -239,15 +239,24 @@ const QuestionsTable = ({
     },
   ];
 
-  const actions: TableAction<Question>[] = [
+  const inlineActions: TableInlineAction<Question>[] = [
     {
-      label: 'Approve',
+      key: 'approve',
+      icon: <Check className='w-4 h-4 text-gray-600' />,
       onClick: onApprove,
+      title: 'Approve answer',
+      show: (question) => question.status !== 'approved',
     },
     {
-      label: 'Unapprove',
+      key: 'unapprove',
+      icon: <Undo2 className='w-4 h-4 text-gray-600' />,
       onClick: onUnapprove,
+      title: 'Unapprove answer',
+      show: (question) => question.status === 'approved',
     },
+  ];
+
+  const actions: TableAction<Question>[] = [
     {
       label: 'Edit',
       onClick: onEdit,
@@ -259,6 +268,7 @@ const QuestionsTable = ({
       data={data}
       columns={columns}
       actions={actions}
+      inlineActions={inlineActions}
       selectedRows={selectedRows}
       onRowSelect={onRowSelect}
       onSelectAll={onSelectAll}

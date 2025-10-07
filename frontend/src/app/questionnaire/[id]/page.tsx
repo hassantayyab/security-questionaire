@@ -452,8 +452,45 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   };
 
   const handleBulkDelete = async () => {
-    toast.info('Bulk delete functionality coming soon');
-    // TODO: Implement bulk delete when API endpoint is available
+    const selectedQuestionsList = questions.filter((q) => selectedQuestions.has(q.id));
+
+    if (selectedQuestionsList.length === 0) {
+      toast.info('No questions selected to delete');
+      return;
+    }
+
+    try {
+      const questionIds = Array.from(selectedQuestions);
+      const response = await api.bulkDeleteQuestions(questionIds);
+
+      if (response.success) {
+        // Remove deleted questions from state
+        setQuestions((prev) => prev.filter((q) => !selectedQuestions.has(q.id)));
+
+        toast.success(
+          `Deleted ${response.deleted_count} question${response.deleted_count !== 1 ? 's' : ''}`,
+        );
+
+        if (response.errors && response.errors.length > 0) {
+          toast.warning(
+            `${response.errors.length} question${
+              response.errors.length !== 1 ? 's' : ''
+            } had errors`,
+          );
+        }
+
+        setSelectedQuestions(new Set());
+      } else {
+        toast.error('Failed to delete questions');
+      }
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to delete questions');
+      }
+    }
   };
 
   const handleClearSelection = () => {
@@ -522,14 +559,14 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
             {showTableSpinner ? (
               <LoadingSpinner />
             ) : questions.length === 0 ? (
-              <div className='text-center py-8 space-y-3'>
+              <div className='text-center py-12 space-y-3'>
                 <div className='text-lg font-medium text-gray-500'>No questions found</div>
                 <div className='text-sm text-gray-500'>
                   Upload an Excel questionnaire to get started
                 </div>
               </div>
             ) : filteredQuestions.length === 0 && searchTerm ? (
-              <div className='text-center py-8 space-y-3'>
+              <div className='text-center py-12 space-y-3'>
                 <div className='text-lg font-medium text-gray-500'>
                   No questions match your search
                 </div>
