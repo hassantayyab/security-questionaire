@@ -482,6 +482,41 @@ async def bulk_approve_answers(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in bulk approval: {str(e)}")
 
+@router.delete("/questions/{question_id}")
+async def delete_question(
+    question_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Delete a single question by ID"""
+    try:
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Check if question exists
+        question = await db_service.get_question_by_id(question_id)
+        if not question:
+            raise HTTPException(status_code=404, detail="Question not found")
+        
+        # Delete the question
+        success = await db_service.delete_question(question_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": "Question deleted successfully",
+                "question_id": question_id
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete question")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting question: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting question: {str(e)}")
+
 @router.delete("/questions/bulk-delete")
 async def bulk_delete_questions(
     bulk_delete: BulkDelete,

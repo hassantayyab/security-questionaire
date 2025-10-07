@@ -161,6 +161,12 @@ class ApiClient {
     });
   }
 
+  async deleteQuestion(questionId: string) {
+    return this.request<any>(`/questionnaires/questions/${questionId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async bulkDeleteQuestions(questionIds: string[]) {
     return this.request<any>('/questionnaires/questions/bulk-delete', {
       method: 'DELETE',

@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { appConfig } from '@/config/app';
 import { api, ApiError } from '@/lib/api';
 import { AlertCircle, FileText } from 'lucide-react';
@@ -138,10 +137,6 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
         <div className='flex flex-col gap-5 p-6'>
           {/* Document Upload Section */}
           <div className='flex flex-col gap-1 w-full'>
-            <div className='flex gap-1 items-center'>
-              <Label className='text-xs font-medium text-gray-700'>Document</Label>
-            </div>
-
             <div
               className={`bg-gray-50 border-2 border-dashed rounded-lg flex flex-col gap-2 h-[120px] items-center justify-center px-6 py-8 w-full cursor-pointer hover:bg-gray-100 transition-colors ${
                 error ? 'border-red-300 bg-red-50' : 'border-gray-300'

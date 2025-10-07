@@ -556,7 +556,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     if (!confirmDelete) return;
 
     try {
-      const response = await api.bulkDeleteQuestions([question.id]);
+      const response = await api.deleteQuestion(question.id);
 
       if (response.success) {
         toast.success('Question deleted successfully');

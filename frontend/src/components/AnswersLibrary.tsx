@@ -7,7 +7,7 @@ import SearchField from '@/components/SearchField';
 import { AddAnswerDialog, ImportQuestionnaireDialog } from '@/components/dialogs';
 import { api } from '@/lib/api';
 import { Answer } from '@/types';
-import { FileText, Import, Plus } from 'lucide-react';
+import { Import, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -156,7 +156,13 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   const handleBulkDelete = async () => {
     const selectedCount = selectedRows.size;
 
-    if (!confirm(`Are you sure you want to delete ${selectedCount} answer${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedCount} answer${
+          selectedCount !== 1 ? 's' : ''
+        }? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
@@ -234,7 +240,6 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
         <LoadingSpinner />
       ) : answers.length === 0 ? (
         <div className='text-center py-8 space-y-3'>
-          <FileText className='w-12 h-12 text-gray-500 mx-auto' />
           <div className='text-base font-medium text-gray-500'>No answers available</div>
           <div className='text-sm text-gray-500'>
             Add your first answer or import a questionnaire to get started

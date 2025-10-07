@@ -7,7 +7,6 @@ import SearchField from '@/components/SearchField';
 import { ExcelUploadDialog } from '@/components/dialogs';
 import { api, ApiError } from '@/lib/api';
 import { Questionnaire } from '@/types';
-import { FileSpreadsheet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -136,7 +135,6 @@ export default function QuestionnairePage() {
           />
         ) : questionnaires.length === 0 ? (
           <div className='text-center space-y-3 py-12'>
-            <FileSpreadsheet className='w-12 h-12 text-gray-500 mx-auto' />
             <div className='text-lg font-medium text-gray-500'>No questionnaires found</div>
             <div className='text-sm text-gray-500'>
               Upload an Excel questionnaire to get started

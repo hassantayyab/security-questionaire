@@ -140,7 +140,13 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
   const handleBulkDelete = async () => {
     const selectedCount = selectedRows.size;
 
-    if (!confirm(`Are you sure you want to delete ${selectedCount} resource${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedCount} resource${
+          selectedCount !== 1 ? 's' : ''
+        }? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
@@ -256,9 +262,8 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
         <LoadingSpinner />
       ) : policies.length === 0 ? (
         <div className='text-center py-8 space-y-3'>
-          <FileText className='w-12 h-12 text-gray-500 mx-auto' />
-          <div className='text-base font-medium text-gray-500'>No documents uploaded</div>
-          <div className='text-sm text-gray-500'>Upload your first PDF document to get started</div>
+          <div className='text-base font-medium text-gray-500'>No resources added</div>
+          <div className='text-sm text-gray-500'>Upload your first document to get started</div>
         </div>
       ) : filteredPolicies.length === 0 ? (
         <div className='text-center py-8 space-y-3'>

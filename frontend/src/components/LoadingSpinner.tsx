@@ -28,7 +28,7 @@ export const LoadingSpinner = ({ className = '', text = 'Loading...' }: LoadingS
           </svg>
         </div>
         {/* Loading text */}
-        <p className='text-xs font-normal text-gray-800'>{text}</p>
+        <p className='text-sm font-normal text-gray-800'>{text}</p>
       </div>
     </div>
   );

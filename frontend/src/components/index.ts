@@ -16,7 +16,6 @@ export { default as Navbar } from './Navbar';
 export { default as QuestionnaireDetailView } from './QuestionnaireDetailView';
 export { default as QuestionnairesTable } from './QuestionnairesTable';
 export { default as QuestionnaireStatusDropdown } from './QuestionnaireStatusDropdown';
-export { default as QuestionsAnswers } from './QuestionsAnswers';
 export { default as QuestionsTable } from './QuestionsTable';
 export { default as SearchField } from './SearchField';
 export { SidebarNavigation, SidebarNavigationItem, SidebarNavigationSection } from './sidebar';
