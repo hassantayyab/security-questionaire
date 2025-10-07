@@ -315,11 +315,82 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   };
 
   const handleGenerateSingleAnswer = async (question: Question) => {
-    toast.info('Generating AI answer for this question...');
+    try {
+      toast.info('Generating AI answer for this question...', {
+        description: 'This may take a few seconds',
+      });
+
+      const response = await api.generateSingleAnswer(question.id);
+
+      if (response.success) {
+        toast.success('Answer generated successfully!');
+
+        // Update the question in the list with the new answer
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  answer: response.answer,
+                  status: 'unapproved' as const,
+                  answer_source: 'ai' as const,
+                }
+              : q,
+          ),
+        );
+      } else {
+        toast.error('Failed to generate answer');
+      }
+    } catch (error) {
+      console.error('Generate single answer error:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to generate answer. Please try again.');
+      }
+    }
   };
 
   const handleRegenerateAnswer = async (question: Question) => {
-    toast.info('Regenerating AI answer...');
+    try {
+      toast.info('Regenerating AI answer...', {
+        description: 'This may take a few seconds',
+      });
+
+      const response = await api.generateSingleAnswer(question.id);
+
+      if (response.success) {
+        toast.success('Answer regenerated successfully!');
+
+        // Update the question in the list with the new answer
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  answer: response.answer,
+                  status: 'unapproved' as const,
+                  answer_source: 'ai' as const,
+                }
+              : q,
+          ),
+        );
+      } else {
+        toast.error('Failed to regenerate answer');
+      }
+    } catch (error) {
+      console.error('Regenerate answer error:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to regenerate answer. Please try again.');
+      }
+    }
+  };
+
+  const cancelEditing = () => {
+    setEditingQuestionId(null);
+    setEditingAnswer('');
   };
 
   const handleBulkApprove = async () => {
@@ -483,6 +554,11 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
                 onUnapprove={(question) => toggleApproval(question.id, question.status)}
                 onGenerateAI={handleGenerateSingleAnswer}
                 onRegenerateAI={handleRegenerateAnswer}
+                editingQuestionId={editingQuestionId}
+                editingAnswer={editingAnswer}
+                onEditAnswerChange={setEditingAnswer}
+                onSaveAnswer={saveAnswer}
+                onCancelEdit={cancelEditing}
               />
             )}
           </QuestionnaireDetailView>

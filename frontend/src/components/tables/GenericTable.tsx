@@ -99,7 +99,7 @@ const GenericTable = <T,>({
                       type='checkbox'
                       checked={allSelected}
                       onChange={(e) => onSelectAll?.(e.target.checked)}
-                      className='w-4 h-4 border border-gray-300 rounded cursor-pointer transition-colors'
+                      className='w-4 h-4 border border-gray-300 rounded cursor-pointer transition-colors accent-violet-600'
                     />
                     <span className='text-xs font-medium text-gray-900'>{columns[0].header}</span>
                   </div>
@@ -134,7 +134,7 @@ const GenericTable = <T,>({
                           type='checkbox'
                           checked={selectedRows.has(itemId)}
                           onChange={() => onRowSelect?.(itemId)}
-                          className='w-4 h-4 border border-gray-300 rounded cursor-pointer transition-colors'
+                          className='w-4 h-4 border border-gray-300 rounded cursor-pointer transition-colors accent-violet-600'
                         />
                         <div className='flex-1'>{columns[0].render(item)}</div>
                       </div>

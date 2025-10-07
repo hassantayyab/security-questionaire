@@ -79,11 +79,12 @@ async def generate_answers_background(
                     policy_context
                 )
                 
-                # Update question with generated answer
+                # Update question with generated answer and set answer_source to 'ai'
                 await db_service.update_question_answer(
                     question["id"], 
                     answer, 
-                    status="unapproved"
+                    status="unapproved",
+                    answer_source="ai"
                 )
                 
                 success_count += 1
@@ -373,6 +374,61 @@ async def bulk_approve_answers(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in bulk approval: {str(e)}")
+
+@router.post("/questions/{question_id}/generate-answer")
+async def generate_single_answer(
+    question_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """
+    Generate AI answer for a single question using policy documents
+    """
+    try:
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Get the question by ID
+        question = await db_service.get_question_by_id(question_id)
+        
+        if not question:
+            raise HTTPException(status_code=404, detail="Question not found")
+        
+        # Get all policy documents text
+        policies = await db_service.get_all_policies()
+        policy_context = "\n\n".join([p.get("extracted_text", "") for p in policies if p.get("extracted_text")])
+        
+        if not policy_context:
+            raise HTTPException(status_code=400, detail="No policy documents found. Please upload PDF policies first.")
+        
+        # Initialize AI service and generate answer
+        ai_service = AIService(settings.anthropic_api_key)
+        answer = await ai_service.generate_answer(
+            question["question_text"], 
+            policy_context
+        )
+        
+        # Update question with generated answer and set answer_source to 'ai'
+        await db_service.update_question_answer(
+            question_id, 
+            answer, 
+            status="unapproved",
+            answer_source="ai"
+        )
+        
+        return {
+            "success": True,
+            "message": "Answer generated successfully",
+            "question_id": question_id,
+            "answer": answer
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating single answer: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating answer: {str(e)}")
 
 @router.get("/{questionnaire_id}/export")
 async def export_approved_answers(

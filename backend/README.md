@@ -31,6 +31,22 @@ pip install -r requirements.txt
 3. Paste and run in the SQL Editor
 4. Verify all 4 tables were created (policies, questionnaires, questions, answers)
 
+#### Optional Migrations
+
+After initial setup, you can run optional migrations for enhanced features:
+
+**Answer Source Tracking** (`migrations/add_answer_source_column.sql`):
+
+- Adds visual indicators showing whether answers were AI-generated or manually entered
+- Enables distinction between different answer sources (ai, user, copied, not_found)
+- The app works without this migration, but you won't see source indicators in the UI
+
+To run a migration:
+
+1. Go to Supabase Dashboard → SQL Editor
+2. Copy contents of the migration file from `backend/migrations/`
+3. Paste and run in SQL Editor
+
 ### 3. Configure Environment
 
 ```bash
@@ -78,7 +94,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 - `GET /api/questionnaires/` - Get all questionnaires
 - `GET /api/questionnaires/{id}/questions` - Get questions for a questionnaire
-- `POST /api/questionnaires/{id}/generate-answers` - Generate AI answers
+- `POST /api/questionnaires/{id}/generate-answers` - Generate AI answers for all questions
+- `POST /api/questionnaires/questions/{id}/generate-answer` - Generate AI answer for a single question
 - `PUT /api/questionnaires/questions/{id}/answer` - Update answer
 - `PUT /api/questionnaires/questions/{id}/approve` - Approve answer
 - `PUT /api/questionnaires/questions/bulk-approve` - Bulk approve answers
@@ -124,6 +141,9 @@ backend/
 │   ├── config/              # Configuration settings
 │   │   └── settings.py      # Pydantic settings
 │   └── main.py              # FastAPI application setup
+├── migrations/              # Database migration scripts
+│   ├── add_answer_source_column.sql # Add answer source tracking
+│   └── README.md           # Migration instructions
 ├── requirements.txt         # Python dependencies
 ├── start.py                # Development server startup script
 ├── supabase_complete_schema.sql # Complete database schema

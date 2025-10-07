@@ -206,8 +206,23 @@ class DatabaseService:
             logger.error(f"Error fetching questions for questionnaire {questionnaire_id}: {str(e)}")
             raise Exception(f"Database error fetching questions: {str(e)}")
     
-    async def update_question_answer(self, question_id: str, answer: str, status: str = "unapproved") -> bool:
-        """Update a question's answer and status"""
+    async def get_question_by_id(self, question_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific question by ID"""
+        try:
+            result = self.client.table("questions").select("*").eq("id", question_id).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            logger.error(f"Error fetching question {question_id}: {str(e)}")
+            raise Exception(f"Database error fetching question: {str(e)}")
+    
+    async def update_question_answer(
+        self, 
+        question_id: str, 
+        answer: str, 
+        status: str = "unapproved",
+        answer_source: Optional[str] = None
+    ) -> bool:
+        """Update a question's answer, status, and optionally answer_source"""
         try:
             update_data = {
                 "answer": answer,
@@ -215,9 +230,35 @@ class DatabaseService:
                 "updated_at": datetime.utcnow().isoformat()
             }
             
+            # Only set answer_source if provided AND the column exists
+            # Note: Run the migration in backend/migrations/add_answer_source_column.sql
+            # to add this column to your database
+            if answer_source:
+                try:
+                    update_data["answer_source"] = answer_source
+                except Exception:
+                    logger.warning("answer_source column may not exist. Run migration: add_answer_source_column.sql")
+            
             result = self.client.table("questions").update(update_data).eq("id", question_id).execute()
             return len(result.data) > 0
         except Exception as e:
+            # Check if error is due to missing answer_source column
+            error_str = str(e).lower()
+            if "answer_source" in error_str or "column" in error_str:
+                logger.warning("answer_source column does not exist. Run migration: add_answer_source_column.sql")
+                # Retry without answer_source
+                try:
+                    update_data_fallback = {
+                        "answer": answer,
+                        "status": status,
+                        "updated_at": datetime.utcnow().isoformat()
+                    }
+                    result = self.client.table("questions").update(update_data_fallback).eq("id", question_id).execute()
+                    return len(result.data) > 0
+                except Exception as fallback_error:
+                    logger.error(f"Error updating question {question_id} (fallback): {str(fallback_error)}")
+                    raise Exception(f"Database error updating question: {str(fallback_error)}")
+            
             logger.error(f"Error updating question {question_id}: {str(e)}")
             raise Exception(f"Database error updating question: {str(e)}")
     

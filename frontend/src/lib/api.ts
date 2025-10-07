@@ -155,6 +155,12 @@ class ApiClient {
     return this.request<any>(`/questionnaires/${questionnaireId}/export`);
   }
 
+  async generateSingleAnswer(questionId: string) {
+    return this.request<any>(`/questionnaires/questions/${questionId}/generate-answer`, {
+      method: 'POST',
+    });
+  }
+
   // Answers Library
   async getAnswers() {
     return this.request<any>('/answers/');
