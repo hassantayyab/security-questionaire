@@ -29,6 +29,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     completed: number;
   } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
   const isGeneratingRef = useRef(false);
 
   // Keep ref in sync with state
@@ -47,22 +48,22 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     }
   }, [questionnaire]);
 
-  // Update generation progress whenever questions change to show current state
+  // Update generation progress whenever questions change, but only if generation has been started
   useEffect(() => {
-    if (questions.length > 0) {
+    if (questions.length > 0 && hasStartedGeneration) {
       const answeredCount = questions.filter(
         (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
       ).length;
 
-      // Always show progress if there are questions, even when not actively generating
+      // Show progress only after generation has been started
       setGenerationProgress({
         total: questions.length,
         completed: answeredCount,
       });
-    } else {
+    } else if (!hasStartedGeneration) {
       setGenerationProgress(null);
     }
-  }, [questions]);
+  }, [questions, hasStartedGeneration]);
 
   // Cleanup polling interval on unmount
   useEffect(() => {
@@ -123,7 +124,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
     const interval = setInterval(() => {
       loadQuestions(questionnaireId);
-    }, 2000);
+    }, 10000); // Poll every 10 seconds for faster updates
 
     setPollingInterval(interval);
 
@@ -143,13 +144,8 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
       }
       setIsGenerating(false);
 
-      if (clearProgressImmediately) {
-        setGenerationProgress(null);
-      } else {
-        setTimeout(() => {
-          setGenerationProgress(null);
-        }, 2000);
-      }
+      // Don't clear generationProgress anymore - let it persist to show final state
+      // The useEffect will keep it updated based on actual answered questions
     },
     [pollingInterval],
   );
@@ -176,6 +172,8 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
       (q: Question) => q.answer && q.answer.trim() !== '' && q.answer !== null,
     ).length;
 
+    // Mark that generation has been started
+    setHasStartedGeneration(true);
     setIsGenerating(true);
 
     setGenerationProgress({
@@ -205,12 +203,12 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
 
           await loadQuestions(questionnaire.id);
           setIsGenerating(false);
-          setGenerationProgress(null);
+          // Keep generationProgress visible to show final state
         }
       } else {
         toast.error('Failed to start answer generation');
         setIsGenerating(false);
-        setGenerationProgress(null);
+        // Keep generationProgress visible to show current state
       }
     } catch (error) {
       console.error('Generate answers error:', error);
@@ -220,7 +218,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
         toast.error('Failed to start answer generation. Please try again.');
       }
       setIsGenerating(false);
-      setGenerationProgress(null);
+      // Keep generationProgress visible to show current state
     }
   };
 
@@ -413,7 +411,8 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   ).length;
 
   // Show spinner ONLY in table area while loading questionnaire or questions
-  const showTableSpinner = isLoading || isLoadingQuestions;
+  // BUT not during polling/generation to avoid UI flickering
+  const showTableSpinner = (isLoading || isLoadingQuestions) && !isGenerating;
 
   // Create a placeholder questionnaire object if not loaded yet
   const displayQuestionnaire = questionnaire || {

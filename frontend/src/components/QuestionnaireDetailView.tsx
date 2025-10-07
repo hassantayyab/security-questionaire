@@ -5,7 +5,7 @@ import SearchField from '@/components/SearchField';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Questionnaire } from '@/types';
-import { Clock, Download, Loader2, Sparkles, X } from 'lucide-react';
+import { Clock, Download, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -98,26 +98,18 @@ const QuestionnaireDetailView = ({
         </div>
 
         <div className='flex items-center gap-3 flex-shrink-0'>
-          {totalCount > 0 && onGenerateAnswers && (
+          {/* Show Generate button ONLY when not generating and no generation has started */}
+          {totalCount > 0 && onGenerateAnswers && !isGenerating && !generationProgress && (
             <Button
               onClick={onGenerateAnswers}
-              disabled={isGenerating}
               className='gap-2 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20 transition-colors cursor-pointer'
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 className='w-4 h-4 animate-spin' />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className='w-4 h-4' />
-                  Generate with AI
-                </>
-              )}
+              <Sparkles className='w-4 h-4' />
+              Generate with AI
             </Button>
           )}
 
+          {/* Show Stop button when actively generating */}
           {isGenerating && onStopGeneration && (
             <Button
               variant='outline'
@@ -129,9 +121,13 @@ const QuestionnaireDetailView = ({
             </Button>
           )}
 
-          {totalCount > 0 && (
+          {/* Show progress bar when generating or when generation has been started */}
+          {totalCount > 0 && generationProgress && (
             <div className='flex-shrink-0'>
-              <AIGenerationProgress completed={approvedCount} total={totalCount} />
+              <AIGenerationProgress
+                completed={generationProgress.completed}
+                total={generationProgress.total}
+              />
             </div>
           )}
         </div>
