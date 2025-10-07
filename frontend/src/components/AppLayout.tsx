@@ -2,7 +2,7 @@
 
 import { SidebarNavigation } from '@/components';
 import { NavigationSection } from '@/types';
-import { FolderOpen, HelpCircle } from 'lucide-react';
+import { Activity, FolderOpen, HelpCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -32,12 +32,24 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         },
       ],
     },
+    {
+      heading: 'System',
+      items: [
+        {
+          id: 'debug',
+          label: 'Diagnostics',
+          icon: Activity,
+          href: '/debug',
+        },
+      ],
+    },
   ];
 
   // Determine active item based on current pathname
   const getActiveItemId = () => {
     if (pathname.startsWith('/knowledge-base')) return 'knowledge-base';
     if (pathname.startsWith('/questionnaire')) return 'questionnaire';
+    if (pathname.startsWith('/debug')) return 'debug';
     return '';
   };
 

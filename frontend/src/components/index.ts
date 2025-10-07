@@ -10,7 +10,7 @@ export { default as KnowledgeBase, type KnowledgeBaseRef } from './KnowledgeBase
 export { default as KnowledgeBaseTable } from './KnowledgeBaseTable';
 export { default as KnowledgeBaseTabs } from './KnowledgeBaseTabs';
 export { LoadingSpinner } from './LoadingSpinner';
-export { MultiSelectBanner, BannerActionButton } from './MultiSelectBanner';
+export { BannerActionButton, MultiSelectBanner } from './MultiSelectBanner';
 export { default as Navbar } from './Navbar';
 export { default as QuestionnaireDetailView } from './QuestionnaireDetailView';
 export { default as QuestionnairesTable } from './QuestionnairesTable';
@@ -18,6 +18,7 @@ export { default as QuestionsAnswers } from './QuestionsAnswers';
 export { default as QuestionsTable } from './QuestionsTable';
 export { default as SearchField } from './SearchField';
 export { SidebarNavigation, SidebarNavigationItem, SidebarNavigationSection } from './sidebar';
+export { SystemHealthCheck } from './SystemHealthCheck';
 export { GenericTable } from './tables';
 export { default as TabNavigation } from './TabNavigation';
 export { UploadDialog } from './UploadDialog';

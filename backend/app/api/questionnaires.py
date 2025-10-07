@@ -6,12 +6,14 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from typing import Dict, Any, List
 from pydantic import BaseModel
 import asyncio
+import logging
 
 from app.services.ai_service import AIService
 from app.services.database import DatabaseService
 from app.config.settings import get_settings, Settings
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 class AnswerUpdate(BaseModel):
     answer: str
@@ -27,7 +29,16 @@ async def generate_answers_background(
     """
     Background task to generate AI answers for all questions in a questionnaire
     """
+    logger.info(f"Starting AI answer generation for questionnaire: {questionnaire_id}")
+    
     try:
+        # Validate API key first
+        if not anthropic_api_key:
+            logger.error("CRITICAL: ANTHROPIC_API_KEY is not set!")
+            logger.error("Please set ANTHROPIC_API_KEY in your .env file")
+            return
+        
+        logger.info("Initializing services...")
         db_service = DatabaseService(
             supabase_url=supabase_url,
             supabase_key=supabase_key
@@ -35,21 +46,34 @@ async def generate_answers_background(
         ai_service = AIService(anthropic_api_key)
         
         # Get questions for the questionnaire
+        logger.info(f"Fetching questions for questionnaire: {questionnaire_id}")
         questions = await db_service.get_questions_by_questionnaire(questionnaire_id)
         
         if not questions:
+            logger.warning(f"No questions found for questionnaire: {questionnaire_id}")
             return
         
+        logger.info(f"Found {len(questions)} questions to process")
+        
         # Get all policy documents text
+        logger.info("Fetching policy documents...")
         policies = await db_service.get_all_policies()
         policy_context = "\n\n".join([p.get("extracted_text", "") for p in policies if p.get("extracted_text")])
         
         if not policy_context:
+            logger.error("No policy context found! Please upload PDF policies first.")
             return
         
+        logger.info(f"Policy context loaded: {len(policy_context)} characters")
+        
         # Generate answers for each question
-        for question in questions:
+        success_count = 0
+        error_count = 0
+        
+        for idx, question in enumerate(questions, 1):
             try:
+                logger.info(f"Processing question {idx}/{len(questions)}: {question['question_text'][:50]}...")
+                
                 answer = await ai_service.generate_answer(
                     question["question_text"], 
                     policy_context
@@ -62,15 +86,26 @@ async def generate_answers_background(
                     status="unapproved"
                 )
                 
+                success_count += 1
+                logger.info(f"✓ Successfully generated answer {idx}/{len(questions)}")
+                
                 # Small delay to prevent overwhelming the API
                 await asyncio.sleep(0.5)
                 
             except Exception as e:
-                print(f"Error generating answer for question {question['id']}: {str(e)}")
+                error_count += 1
+                logger.error(f"✗ Error generating answer for question {question['id']}: {str(e)}")
+                logger.error(f"Error type: {type(e).__name__}")
+                logger.error(f"Question text: {question.get('question_text', 'N/A')[:100]}")
                 continue
+        
+        logger.info(f"AI generation completed for questionnaire {questionnaire_id}")
+        logger.info(f"Results: {success_count} successful, {error_count} failed")
                 
     except Exception as e:
-        print(f"Background task error: {str(e)}")
+        logger.error(f"CRITICAL: Background task error: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.exception("Full traceback:")
 
 class BulkApproval(BaseModel):
     question_ids: List[str]
