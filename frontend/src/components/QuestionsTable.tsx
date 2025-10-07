@@ -43,11 +43,11 @@ const QuestionsTable = ({
     const hasAnswer = question.answer && question.answer.trim();
 
     if (!hasAnswer) {
-      // No answer - show dash and action buttons
+      // No answer - show dash and action buttons on hover
       return (
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-2 group'>
           <div className='h-[2px] w-3 bg-gray-900' />
-          <div className='flex items-center gap-3'>
+          <div className='flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity'>
             <button
               onClick={() => onGenerateAI(question)}
               className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'

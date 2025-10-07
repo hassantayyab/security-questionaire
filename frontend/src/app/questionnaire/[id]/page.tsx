@@ -6,7 +6,6 @@ import QuestionsTable from '@/components/QuestionsTable';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { api, ApiError } from '@/lib/api';
 import { GenerateAnswersResponse, Question, Questionnaire } from '@/types';
-import { HelpCircle, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -42,12 +41,6 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  useEffect(() => {
-    if (questionnaire) {
-      loadQuestions(questionnaire.id);
-    }
-  }, [questionnaire]);
-
   // Update generation progress whenever questions change, but only if generation has been started
   useEffect(() => {
     if (questions.length > 0 && hasStartedGeneration) {
@@ -82,6 +75,8 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
         const found = response.questionnaires?.find((q: Questionnaire) => q.id === id);
         if (found) {
           setQuestionnaire(found);
+          // Load questions immediately after setting questionnaire
+          await loadQuestions(found.id);
         } else {
           toast.error('Questionnaire not found');
           router.push('/questionnaire');
@@ -457,7 +452,6 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
               <LoadingSpinner />
             ) : questions.length === 0 ? (
               <div className='text-center py-8 space-y-3'>
-                <HelpCircle className='w-12 h-12 text-gray-500 mx-auto' />
                 <div className='text-lg font-medium text-gray-500'>No questions found</div>
                 <div className='text-sm text-gray-500'>
                   Upload an Excel questionnaire to get started
@@ -465,7 +459,6 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
               </div>
             ) : filteredQuestions.length === 0 && searchTerm ? (
               <div className='text-center py-8 space-y-3'>
-                <Search className='w-12 h-12 text-gray-500 mx-auto' />
                 <div className='text-lg font-medium text-gray-500'>
                   No questions match your search
                 </div>
