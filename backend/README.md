@@ -24,7 +24,14 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+### 2. Set Up Supabase Database
+
+1. Go to your Supabase Dashboard → SQL Editor
+2. Copy the contents of `supabase_complete_schema.sql`
+3. Paste and run in the SQL Editor
+4. Verify all 4 tables were created (policies, questionnaires, questions, answers)
+
+### 3. Configure Environment
 
 ```bash
 # Copy environment template
@@ -36,11 +43,11 @@ nano .env
 
 Required environment variables:
 
-- `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_KEY`: Your Supabase anon key
-- `ANTHROPIC_API_KEY`: Your Anthropic API key
+- `SUPABASE_URL`: Your Supabase project URL (e.g., https://xxxxx.supabase.co)
+- `SUPABASE_KEY`: Your Supabase anon or service_role key
+- `ANTHROPIC_API_KEY`: Your Anthropic API key for Claude
 
-### 3. Start the Server
+### 4. Start the Server
 
 ```bash
 # Using the startup script
@@ -119,7 +126,7 @@ backend/
 │   └── main.py              # FastAPI application setup
 ├── requirements.txt         # Python dependencies
 ├── start.py                # Development server startup script
-├── database_schema_answers.sql # Answers table schema
+├── supabase_complete_schema.sql # Complete database schema
 ├── env_template.txt        # Environment variables template
 └── README.md               # This file
 ```
@@ -190,7 +197,7 @@ CREATE INDEX idx_answers_created_at ON answers(created_at DESC);
 CREATE INDEX idx_answers_source_type ON answers(source_type);
 ```
 
-See [database_schema_answers.sql](database_schema_answers.sql) for the complete schema with triggers and RLS policies.
+See [supabase_complete_schema.sql](supabase_complete_schema.sql) for the complete schema with all tables, triggers and RLS policies.
 
 ## Development
 

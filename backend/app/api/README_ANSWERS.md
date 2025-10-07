@@ -206,7 +206,7 @@ curl -X DELETE http://localhost:8000/api/answers/{answer_id}
 
 - **API Routes**: `backend/app/api/answers.py`
 - **Database Service**: `backend/app/services/database.py`
-- **Database Schema**: `backend/database_schema_answers.sql`
+- **Database Schema**: `backend/supabase_complete_schema.sql`
 - **Frontend Component**: `frontend/src/components/AnswersLibrary.tsx`
 - **API Client**: `frontend/src/lib/api.ts`
 
