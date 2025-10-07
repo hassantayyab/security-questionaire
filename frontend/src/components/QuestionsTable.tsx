@@ -3,7 +3,7 @@
 import { GenericTable, TableAction, TableColumn } from '@/components/tables';
 import { Badge } from '@/components/ui/badge';
 import { Question } from '@/types';
-import { Check, ClipboardCopy, Edit, RefreshCw, RotateCcw, Sparkles, User } from 'lucide-react';
+import { ClipboardCopy, Edit, RefreshCw, Sparkles, User } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface QuestionsTableProps {
@@ -211,47 +211,17 @@ const QuestionsTable = ({
   ];
 
   return (
-    <div className='relative'>
-      {/* Action buttons row before table */}
-      <div className='absolute -top-14 left-0 right-0 flex items-center gap-4'>
-        {selectedRows.size > 0 && (
-          <>
-            <button
-              onClick={() => {
-                // Bulk approve logic would go here
-                console.log('Bulk approve', selectedRows);
-              }}
-              className='bg-white border border-gray-300 rounded px-3 py-[7px] flex items-center gap-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer'
-            >
-              <Check className='w-4 h-4' />
-              Approve selected
-            </button>
-            <button
-              onClick={() => {
-                // Bulk unapprove logic would go here
-                console.log('Bulk unapprove', selectedRows);
-              }}
-              className='bg-white border border-gray-300 rounded px-3 py-[7px] flex items-center gap-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer'
-            >
-              <RotateCcw className='w-4 h-4' />
-              Unapprove selected
-            </button>
-          </>
-        )}
-      </div>
-
-      <GenericTable
-        data={data}
-        columns={columns}
-        actions={actions}
-        selectedRows={selectedRows}
-        onRowSelect={onRowSelect}
-        onSelectAll={onSelectAll}
-        getRowId={(question) => question.id}
-        itemsPerPage={10}
-        showCheckbox={true}
-      />
-    </div>
+    <GenericTable
+      data={data}
+      columns={columns}
+      actions={actions}
+      selectedRows={selectedRows}
+      onRowSelect={onRowSelect}
+      onSelectAll={onSelectAll}
+      getRowId={(question) => question.id}
+      itemsPerPage={10}
+      showCheckbox={true}
+    />
   );
 };
 

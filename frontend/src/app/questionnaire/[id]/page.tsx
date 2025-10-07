@@ -1,6 +1,6 @@
 'use client';
 
-import { AppLayout, LoadingSpinner } from '@/components';
+import { AppLayout, BannerActionButton, LoadingSpinner, MultiSelectBanner } from '@/components';
 import QuestionnaireDetailView from '@/components/QuestionnaireDetailView';
 import QuestionsTable from '@/components/QuestionsTable';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -329,6 +329,73 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     toast.info('Regenerating AI answer...');
   };
 
+  const handleBulkApprove = async () => {
+    const selectedQuestionsList = questions.filter((q) => selectedQuestions.has(q.id));
+    const unapprovedQuestions = selectedQuestionsList.filter((q) => q.status !== 'approved');
+
+    if (unapprovedQuestions.length === 0) {
+      toast.info('All selected questions are already approved');
+      return;
+    }
+
+    try {
+      await Promise.all(unapprovedQuestions.map((q) => api.approveAnswer(q.id)));
+
+      setQuestions((prev) =>
+        prev.map((q) => (selectedQuestions.has(q.id) ? { ...q, status: 'approved' as const } : q)),
+      );
+
+      toast.success(
+        `Approved ${unapprovedQuestions.length} answer${
+          unapprovedQuestions.length !== 1 ? 's' : ''
+        }`,
+      );
+      setSelectedQuestions(new Set());
+    } catch (error) {
+      console.error('Bulk approve error:', error);
+      toast.error('Failed to approve some answers');
+    }
+  };
+
+  const handleBulkUnapprove = async () => {
+    const selectedQuestionsList = questions.filter((q) => selectedQuestions.has(q.id));
+    const approvedQuestions = selectedQuestionsList.filter((q) => q.status === 'approved');
+
+    if (approvedQuestions.length === 0) {
+      toast.info('None of the selected questions are approved');
+      return;
+    }
+
+    try {
+      await Promise.all(
+        approvedQuestions.map((q) => api.updateAnswer(q.id, q.answer || '', 'unapproved')),
+      );
+
+      setQuestions((prev) =>
+        prev.map((q) =>
+          selectedQuestions.has(q.id) ? { ...q, status: 'unapproved' as const } : q,
+        ),
+      );
+
+      toast.success(
+        `Unapproved ${approvedQuestions.length} answer${approvedQuestions.length !== 1 ? 's' : ''}`,
+      );
+      setSelectedQuestions(new Set());
+    } catch (error) {
+      console.error('Bulk unapprove error:', error);
+      toast.error('Failed to unapprove some answers');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    toast.info('Bulk delete functionality coming soon');
+    // TODO: Implement bulk delete when API endpoint is available
+  };
+
+  const handleClearSelection = () => {
+    setSelectedQuestions(new Set());
+  };
+
   const filteredQuestions = questions.filter((question) => {
     if (!searchTerm.trim()) return true;
 
@@ -361,6 +428,17 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   return (
     <AppLayout>
       <TooltipProvider delayDuration={500}>
+        {/* Multi-select banner - positioned absolutely at top center */}
+        <MultiSelectBanner
+          selectedCount={selectedQuestions.size}
+          itemType='question'
+          onClose={handleClearSelection}
+        >
+          <BannerActionButton onClick={handleBulkApprove}>Approve</BannerActionButton>
+          <BannerActionButton onClick={handleBulkUnapprove}>Unapprove</BannerActionButton>
+          <BannerActionButton onClick={handleBulkDelete}>Delete</BannerActionButton>
+        </MultiSelectBanner>
+
         <div className='p-6 space-y-4'>
           <QuestionnaireDetailView
             questionnaire={displayQuestionnaire}
