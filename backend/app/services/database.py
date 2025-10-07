@@ -195,6 +195,31 @@ class DatabaseService:
             logger.error(f"Error deleting questionnaire {questionnaire_id}: {str(e)}")
             raise Exception(f"Database error deleting questionnaire: {str(e)}")
     
+    async def update_questionnaire_status(self, questionnaire_id: str, status: str) -> bool:
+        """
+        Update the status of a questionnaire
+        
+        Args:
+            questionnaire_id: ID of the questionnaire to update
+            status: New status (in_progress, approved, complete)
+            
+        Returns:
+            bool: True if update was successful
+        """
+        try:
+            result = self.client.table("questionnaires").update({
+                "status": status,
+                "updated_at": datetime.utcnow().isoformat()
+            }).eq("id", questionnaire_id).execute()
+            
+            if result.data:
+                logger.info(f"Updated questionnaire {questionnaire_id} status to {status}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error updating questionnaire status {questionnaire_id}: {str(e)}")
+            raise Exception(f"Database error updating questionnaire status: {str(e)}")
+    
     # QUESTION OPERATIONS
     
     async def get_questions_by_questionnaire(self, questionnaire_id: str) -> List[Dict[str, Any]]:

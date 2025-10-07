@@ -497,6 +497,58 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
     setSelectedQuestions(new Set());
   };
 
+  const handleStatusChange = async (status: 'in_progress' | 'approved' | 'complete') => {
+    if (!questionnaire) return;
+
+    try {
+      const response = await api.updateQuestionnaireStatus(questionnaire.id, status);
+
+      if (response.success) {
+        toast.success(`Questionnaire status updated to ${status.replace('_', ' ')}`);
+
+        // Update local state
+        setQuestionnaire((prev) => (prev ? { ...prev, status } : null));
+      } else {
+        toast.error('Failed to update status');
+      }
+    } catch (error) {
+      console.error('Update status error:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to update status. Please try again.');
+      }
+    }
+  };
+
+  const handleDeleteQuestion = async (question: Question) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete this question? This action cannot be undone.`,
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await api.bulkDeleteQuestions([question.id]);
+
+      if (response.success) {
+        toast.success('Question deleted successfully');
+
+        // Remove question from state
+        setQuestions((prev) => prev.filter((q) => q.id !== question.id));
+      } else {
+        toast.error('Failed to delete question');
+      }
+    } catch (error) {
+      console.error('Delete question error:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to delete question. Please try again.');
+      }
+    }
+  };
+
   const filteredQuestions = questions.filter((question) => {
     if (!searchTerm.trim()) return true;
 
@@ -548,6 +600,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
             onSearchChange={setSearchTerm}
             onBack={handleBackToList}
             onExport={handleExport}
+            onStatusChange={handleStatusChange}
             approvedCount={approvedCount}
             answeredCount={answeredCount}
             totalCount={questions.length}
@@ -589,6 +642,7 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
                 onEdit={startEditing}
                 onApprove={(question) => toggleApproval(question.id, question.status)}
                 onUnapprove={(question) => toggleApproval(question.id, question.status)}
+                onDelete={handleDeleteQuestion}
                 onGenerateAI={handleGenerateSingleAnswer}
                 onRegenerateAI={handleRegenerateAnswer}
                 editingQuestionId={editingQuestionId}

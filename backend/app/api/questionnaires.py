@@ -19,6 +19,9 @@ class AnswerUpdate(BaseModel):
     answer: str
     status: str = "unapproved"
 
+class QuestionnaireStatusUpdate(BaseModel):
+    status: str
+
 # Background task for generating answers
 async def generate_answers_background(
     questionnaire_id: str,
@@ -221,6 +224,52 @@ async def delete_questionnaire(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting questionnaire: {str(e)}")
+
+@router.put("/{questionnaire_id}/status")
+async def update_questionnaire_status(
+    questionnaire_id: str,
+    status_update: QuestionnaireStatusUpdate,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Update the status of a questionnaire"""
+    try:
+        # Validate status
+        valid_statuses = ['in_progress', 'approved', 'complete']
+        if status_update.status not in valid_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+        
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Check if questionnaire exists
+        questionnaires = await db_service.get_all_questionnaires()
+        questionnaire = next((q for q in questionnaires if q["id"] == questionnaire_id), None)
+        
+        if not questionnaire:
+            raise HTTPException(status_code=404, detail="Questionnaire not found")
+        
+        # Update the status
+        success = await db_service.update_questionnaire_status(questionnaire_id, status_update.status)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Questionnaire status updated to {status_update.status}",
+                "questionnaire_id": questionnaire_id,
+                "status": status_update.status
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update questionnaire status")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating questionnaire status: {str(e)}")
 
 @router.get("/{questionnaire_id}/questions")
 async def get_questions(

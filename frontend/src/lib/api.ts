@@ -121,6 +121,16 @@ class ApiClient {
     });
   }
 
+  async updateQuestionnaireStatus(
+    questionnaireId: string,
+    status: 'in_progress' | 'approved' | 'complete',
+  ) {
+    return this.request<any>(`/questionnaires/${questionnaireId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
   async getQuestions(questionnaireId: string) {
     return this.request<any>(`/questionnaires/${questionnaireId}/questions`);
   }

@@ -14,6 +14,7 @@ interface QuestionsTableProps {
   onEdit: (question: Question) => void;
   onApprove: (question: Question) => void;
   onUnapprove: (question: Question) => void;
+  onDelete: (question: Question) => void;
   onGenerateAI: (question: Question) => void;
   onRegenerateAI: (question: Question) => void;
   editingQuestionId?: string | null;
@@ -31,6 +32,7 @@ const QuestionsTable = ({
   onEdit,
   onApprove,
   onUnapprove,
+  onDelete,
   onGenerateAI,
   onRegenerateAI,
   editingQuestionId,
@@ -260,6 +262,10 @@ const QuestionsTable = ({
     {
       label: 'Edit',
       onClick: onEdit,
+    },
+    {
+      label: 'Delete',
+      onClick: onDelete,
     },
   ];
 

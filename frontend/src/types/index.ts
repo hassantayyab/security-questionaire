@@ -24,6 +24,7 @@ export interface Questionnaire {
   question_count?: number;
   approved_count?: number;
   approved_date?: string | null;
+  status?: 'in_progress' | 'approved' | 'complete';
   owner?: {
     name: string;
     avatar?: string;
