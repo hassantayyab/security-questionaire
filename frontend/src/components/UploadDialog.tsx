@@ -9,11 +9,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { appConfig } from '@/config/app';
-import { api, ApiError } from '@/lib/api';
-import { AlertCircle, FileText } from 'lucide-react';
+import { api } from '@/lib/api';
+import { AlertCircle, FileText, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from './ui/button';
 
 interface UploadDialogProps {
   children: React.ReactNode;
@@ -22,10 +21,12 @@ interface UploadDialogProps {
 
 export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(
+    null,
+  );
 
   const validateFile = (file: File): string | null => {
     if (!file.type.includes('pdf')) {
@@ -38,45 +39,83 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const validationError = validateFile(file);
-      if (validationError) {
-        setError(validationError);
-        return;
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const newFiles: File[] = [];
+      const errors: string[] = [];
+
+      Array.from(files).forEach((file) => {
+        const validationError = validateFile(file);
+        if (validationError) {
+          errors.push(`${file.name}: ${validationError}`);
+        } else {
+          // Check if file already exists
+          const isDuplicate = uploadedFiles.some(
+            (existingFile) => existingFile.name === file.name && existingFile.size === file.size,
+          );
+          if (!isDuplicate) {
+            newFiles.push(file);
+          }
+        }
+      });
+
+      if (errors.length > 0) {
+        setError(errors.join('; '));
+      } else {
+        setError(null);
       }
-      setUploadedFile(file);
-      setFileName(file.name);
-      setError(null);
+
+      if (newFiles.length > 0) {
+        setUploadedFiles((prev) => [...prev, ...newFiles]);
+      }
     }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const files = e.dataTransfer.files;
-    if (files[0]) {
-      const validationError = validateFile(files[0]);
-      if (validationError) {
-        setError(validationError);
-        return;
+
+    if (files && files.length > 0) {
+      const newFiles: File[] = [];
+      const errors: string[] = [];
+
+      Array.from(files).forEach((file) => {
+        const validationError = validateFile(file);
+        if (validationError) {
+          errors.push(`${file.name}: ${validationError}`);
+        } else {
+          // Check if file already exists
+          const isDuplicate = uploadedFiles.some(
+            (existingFile) => existingFile.name === file.name && existingFile.size === file.size,
+          );
+          if (!isDuplicate) {
+            newFiles.push(file);
+          }
+        }
+      });
+
+      if (errors.length > 0) {
+        setError(errors.join('; '));
+      } else {
+        setError(null);
       }
-      setUploadedFile(files[0]);
-      setFileName(files[0].name);
-      setError(null);
+
+      if (newFiles.length > 0) {
+        setUploadedFiles((prev) => [...prev, ...newFiles]);
+      }
     }
   };
 
-  const handleDelete = () => {
-    setUploadedFile(null);
-    setFileName('');
+  const handleRemoveFile = (fileToRemove: File) => {
+    setUploadedFiles((prev) => prev.filter((file) => file !== fileToRemove));
     setError(null);
   };
 
   const resetForm = () => {
-    setUploadedFile(null);
-    setFileName('');
+    setUploadedFiles([]);
     setError(null);
     setIsUploading(false);
+    setUploadProgress(null);
   };
 
   const handleCancel = () => {
@@ -85,34 +124,60 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
   };
 
   const handleSave = async () => {
-    if (!uploadedFile) {
-      setError('Please select a file to upload');
+    if (uploadedFiles.length === 0) {
+      setError('Please select at least one file to upload');
       return;
     }
 
     setIsUploading(true);
     setError(null);
 
-    try {
-      const response = await api.uploadPdf(uploadedFile);
+    const totalFiles = uploadedFiles.length;
+    let successCount = 0;
+    const failedFiles: string[] = [];
 
-      if (response.success) {
-        toast.success(response.message || 'Policy uploaded successfully');
+    try {
+      // Upload files sequentially
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const file = uploadedFiles[i];
+        setUploadProgress({ current: i + 1, total: totalFiles });
+
+        try {
+          const response = await api.uploadPdf(file);
+
+          if (response.success) {
+            successCount++;
+          } else {
+            failedFiles.push(file.name);
+          }
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          failedFiles.push(file.name);
+        }
+      }
+
+      // Show results
+      if (successCount === totalFiles) {
+        toast.success(`Successfully uploaded ${successCount} file${successCount !== 1 ? 's' : ''}`);
         onUploadSuccess?.();
         setOpen(false);
         resetForm();
+      } else if (successCount > 0) {
+        toast.warning(
+          `Uploaded ${successCount} of ${totalFiles} files. ${failedFiles.length} failed.`,
+        );
+        // Remove successfully uploaded files
+        setUploadedFiles((prev) => prev.filter((file) => failedFiles.includes(file.name)));
+        setError(`Failed to upload: ${failedFiles.join(', ')}`);
       } else {
-        setError(response.message || 'Upload failed');
+        setError('All uploads failed. Please try again.');
       }
     } catch (error) {
-      console.error('PDF upload error:', error);
-      if (error instanceof ApiError) {
-        setError(error.message);
-      } else {
-        setError('Failed to upload PDF. Please try again.');
-      }
+      console.error('Upload error:', error);
+      setError('An unexpected error occurred during upload.');
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -127,16 +192,17 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className='bg-white max-w-lg w-full rounded-lg shadow-2xl border-0'>
+      <DialogContent className='bg-white max-w-2xl w-full rounded-lg shadow-2xl border-0 max-h-[85vh] flex flex-col'>
         {/* Header */}
-        <DialogHeader className='flex flex-row items-center justify-between border-b border-gray-200 px-6 py-4 space-y-0'>
+        <DialogHeader className='flex flex-row items-center justify-between border-b border-gray-200 px-6 py-4 space-y-0 flex-shrink-0'>
           <DialogTitle className='text-base font-medium text-gray-900'>Add resource</DialogTitle>
         </DialogHeader>
 
         {/* Content */}
-        <div className='flex flex-col gap-5 p-6'>
+        <div className='flex flex-col gap-5 p-6 overflow-y-auto flex-1'>
           {/* Document Upload Section */}
-          <div className='flex flex-col gap-1 w-full'>
+          <div className='flex flex-col gap-3 w-full'>
+            {/* Drop Zone */}
             <div
               className={`bg-gray-50 border-2 border-dashed rounded-lg flex flex-col gap-2 h-[120px] items-center justify-center px-6 py-8 w-full cursor-pointer hover:bg-gray-100 transition-colors ${
                 error ? 'border-red-300 bg-red-50' : 'border-gray-300'
@@ -145,60 +211,67 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => !isUploading && handleDrop(e)}
             >
-              {uploadedFile ? (
-                <div className='flex flex-col items-center gap-3'>
-                  <div className='flex gap-3 items-center'>
-                    <FileText className='h-5 w-5 text-gray-500' />
-                    <div className='text-sm font-medium text-gray-700 truncate max-w-[250px]'>
-                      {uploadedFile.name}
-                    </div>
-                  </div>
-                  <div className='flex gap-2 items-center'>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        !isUploading && document.getElementById('file-upload')?.click();
-                      }}
-                      disabled={isUploading}
-                      className='hover:bg-white'
-                    >
-                      Upload
-                    </Button>
-                    <Button
-                      variant='text'
-                      size='sm'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        !isUploading && handleDelete();
-                      }}
-                      disabled={isUploading}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className='flex flex-col items-center gap-2'>
-                  <span className='text-sm font-medium text-gray-600'>
-                    <span className='text-violet-600'>Upload</span> or drag and drop
-                  </span>
-                  <span className='text-xs text-gray-500'>
-                    PDF up to {appConfig.maxFileSize / 1024 / 1024}MB
-                  </span>
-                </div>
-              )}
+              <div className='flex flex-col items-center gap-2'>
+                <FileText className='h-8 w-8 text-gray-400' />
+                <span className='text-sm font-medium text-gray-600'>
+                  <span className='text-violet-600 cursor-pointer'>Upload</span> or drag and drop
+                </span>
+                <span className='text-xs text-gray-500'>
+                  PDF files up to {appConfig.maxFileSize / 1024 / 1024}MB each
+                </span>
+              </div>
 
               <input
                 id='file-upload'
                 type='file'
                 accept='.pdf'
+                multiple
                 onChange={handleFileUpload}
                 disabled={isUploading}
                 className='hidden'
               />
             </div>
+
+            {/* Uploaded Files List */}
+            {uploadedFiles.length > 0 && (
+              <div className='flex flex-col gap-2'>
+                <div className='text-xs font-medium text-gray-700 uppercase tracking-wide'>
+                  Selected Files ({uploadedFiles.length})
+                </div>
+                <div className='flex flex-col gap-2'>
+                  {uploadedFiles.map((file, index) => (
+                    <div
+                      key={`${file.name}-${index}`}
+                      className='flex items-center justify-between gap-3 p-3 bg-white border border-gray-200 rounded-lg group hover:border-gray-300 transition-colors'
+                    >
+                      <div className='flex items-center gap-2 flex-1 min-w-0'>
+                        <FileText className='w-5 h-5 text-gray-500 flex-shrink-0' />
+                        <div className='flex flex-col gap-0.5 min-w-0 flex-1'>
+                          <p
+                            className='text-sm font-medium text-gray-900 truncate'
+                            title={file.name}
+                          >
+                            {file.name}
+                          </p>
+                          <p className='text-xs text-gray-500'>{formatFileSize(file.size)}</p>
+                        </div>
+                      </div>
+                      <button
+                        type='button'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFile(file);
+                        }}
+                        disabled={isUploading}
+                        className='h-6 w-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex-shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
+                      >
+                        <X className='h-4 w-4' />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Error Message */}
@@ -211,18 +284,45 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
         </div>
 
         {/* Footer */}
-        <div className='bg-white border-t border-gray-200 flex gap-4 items-center justify-end px-6 py-4'>
-          <AppButton variant='secondary' onClick={handleCancel} disabled={isUploading}>
-            Cancel
-          </AppButton>
-          <AppButton
-            variant='primary'
-            onClick={handleSave}
-            disabled={!uploadedFile}
-            loading={isUploading}
-          >
-            {isUploading ? 'Uploading...' : 'Save'}
-          </AppButton>
+        <div className='bg-white border-t border-gray-200 flex flex-col gap-3 px-6 py-4 flex-shrink-0'>
+          {/* Upload Progress */}
+          {uploadProgress && (
+            <div className='flex items-center gap-3 text-sm text-gray-600'>
+              <div className='flex-1'>
+                <div className='flex items-center justify-between mb-1'>
+                  <span className='text-xs font-medium'>Uploading files...</span>
+                  <span className='text-xs text-gray-500'>
+                    {uploadProgress.current} of {uploadProgress.total}
+                  </span>
+                </div>
+                <div className='w-full bg-gray-200 rounded-full h-1.5'>
+                  <div
+                    className='bg-violet-600 h-1.5 rounded-full transition-all duration-300'
+                    style={{
+                      width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className='flex gap-4 items-center justify-end'>
+            <AppButton variant='secondary' onClick={handleCancel} disabled={isUploading}>
+              Cancel
+            </AppButton>
+            <AppButton
+              variant='primary'
+              onClick={handleSave}
+              disabled={uploadedFiles.length === 0}
+              loading={isUploading}
+            >
+              {isUploading
+                ? `Uploading...`
+                : `Upload ${uploadedFiles.length > 0 ? `(${uploadedFiles.length})` : ''}`}
+            </AppButton>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
