@@ -260,21 +260,6 @@ const QuestionsTable = ({
       render: renderAnswerWithSource,
     },
     {
-      key: 'owner',
-      header: 'Owner',
-      width: '68px',
-      render: () => {
-        // Display owner avatar
-        return (
-          <div className='flex items-center'>
-            <div className='w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center'>
-              <span className='text-xs font-medium text-gray-600'>?</span>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
       key: 'status',
       header: 'Status',
       width: '120px',

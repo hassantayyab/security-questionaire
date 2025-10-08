@@ -47,20 +47,6 @@ const QuestionnairesTable = ({
       ),
     },
     {
-      key: 'owner',
-      header: 'Owner',
-      width: '100px',
-      render: () => {
-        return (
-          <div className='flex items-center'>
-            <div className='w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center'>
-              <span className='text-xs font-medium text-gray-600'>?</span>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
       key: 'approved_count',
       header: 'Approved answers',
       width: '150px',
