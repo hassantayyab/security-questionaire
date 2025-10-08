@@ -1,6 +1,7 @@
 'use client';
 
 import { AppLayout, LoadingSpinner } from '@/components';
+import { BannerActionButton, MultiSelectBanner } from '@/components/MultiSelectBanner';
 import QuestionnairesTable from '@/components/QuestionnairesTable';
 import SearchField from '@/components/SearchField';
 import { ExcelUploadDialog } from '@/components/dialogs';
@@ -63,14 +64,6 @@ export default function QuestionnairePage() {
   };
 
   const handleDeleteQuestionnaire = async (questionnaire: Questionnaire) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete '${questionnaire.name}' and all its questions? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-
     try {
       const response = await api.deleteQuestionnaire(questionnaire.id);
 
@@ -90,6 +83,38 @@ export default function QuestionnairePage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const selectedCount = selectedQuestionnaireRows.size;
+
+    try {
+      const questionnaireIds = Array.from(selectedQuestionnaireRows);
+      const response = await api.bulkDeleteQuestionnaires(questionnaireIds);
+
+      if (response.success) {
+        // Reload questionnaires after bulk deletion
+        await loadQuestionnaires();
+        // Clear selection
+        setSelectedQuestionnaireRows(new Set());
+        toast.success(response.message);
+
+        if (response.errors && response.errors.length > 0) {
+          toast.warning(`Some questionnaires could not be deleted`);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting questionnaires:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to delete questionnaires. Please try again.');
+      }
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedQuestionnaireRows(new Set());
+  };
+
   // Filter questionnaires based on search term
   const filteredQuestionnaires = questionnaires.filter((questionnaire) =>
     questionnaire.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -98,6 +123,15 @@ export default function QuestionnairePage() {
   return (
     <AppLayout>
       <div className='p-6 space-y-4'>
+        {/* Multi-Select Banner */}
+        <MultiSelectBanner
+          selectedCount={selectedQuestionnaireRows.size}
+          itemType='questionnaire'
+          onClose={handleClearSelection}
+        >
+          <BannerActionButton onClick={handleBulkDelete}>Delete</BannerActionButton>
+        </MultiSelectBanner>
+
         {/* Page Header */}
         <div className='space-y-1'>
           <h1 className='text-base font-semibold text-gray-900'>Questionnaires</h1>

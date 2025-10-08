@@ -556,12 +556,6 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   };
 
   const handleDeleteQuestion = async (question: Question) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete this question? This action cannot be undone.`,
-    );
-
-    if (!confirmDelete) return;
-
     try {
       const response = await api.deleteQuestion(question.id);
 

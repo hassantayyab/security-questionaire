@@ -70,10 +70,6 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
   };
 
   const handleDeleteAnswer = async (answer: Answer) => {
-    if (!confirm(`Are you sure you want to delete this answer? This action cannot be undone.`)) {
-      return;
-    }
-
     try {
       const response = await api.deleteAnswerLibrary(answer.id);
 
@@ -156,16 +152,6 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
 
   const handleBulkDelete = async () => {
     const selectedCount = selectedRows.size;
-
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedCount} answer${
-          selectedCount !== 1 ? 's' : ''
-        }? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
 
     try {
       const answerIds = Array.from(selectedRows);

@@ -121,6 +121,13 @@ class ApiClient {
     });
   }
 
+  async bulkDeleteQuestionnaires(questionnaireIds: string[]) {
+    return this.request<any>('/questionnaires/bulk-delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ questionnaire_ids: questionnaireIds }),
+    });
+  }
+
   async updateQuestionnaireStatus(
     questionnaireId: string,
     status: 'in_progress' | 'approved' | 'complete',

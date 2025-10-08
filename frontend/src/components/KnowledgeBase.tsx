@@ -93,12 +93,6 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
   };
 
   const handleDeletePolicy = async (policy: Policy) => {
-    if (
-      !confirm(`Are you sure you want to delete "${policy.name}"? This action cannot be undone.`)
-    ) {
-      return;
-    }
-
     try {
       const response = await api.deletePolicy(policy.id);
 
@@ -121,16 +115,6 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
 
   const handleBulkDelete = async () => {
     const selectedCount = selectedRows.size;
-
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedCount} resource${
-          selectedCount !== 1 ? 's' : ''
-        }? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
 
     try {
       const policyIds = Array.from(selectedRows);

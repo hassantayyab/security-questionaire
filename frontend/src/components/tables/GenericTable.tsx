@@ -109,7 +109,15 @@ const GenericTable = <T,>({
                       type='checkbox'
                       checked={allSelected}
                       onChange={(e) => onSelectAll?.(e.target.checked)}
-                      className='w-4 h-4 border border-gray-300 rounded cursor-pointer transition-colors accent-violet-600'
+                      className='w-4 h-4 appearance-none border border-gray-300 rounded cursor-pointer transition-colors checked:bg-violet-600 checked:border-violet-600 hover:border-gray-400'
+                      style={{
+                        backgroundImage: allSelected
+                          ? "url(\"data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e\")"
+                          : 'none',
+                        backgroundSize: '100% 100%',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                      }}
                     />
                     <span className='text-xs font-medium text-gray-900'>{columns[0].header}</span>
                   </div>
@@ -146,7 +154,15 @@ const GenericTable = <T,>({
                           type='checkbox'
                           checked={selectedRows.has(itemId)}
                           onChange={() => onRowSelect?.(itemId)}
-                          className='w-4 h-4 border border-gray-300 rounded cursor-pointer transition-colors accent-violet-600'
+                          className='w-4 h-4 appearance-none border border-gray-300 rounded cursor-pointer transition-colors checked:bg-violet-600 checked:border-violet-600 hover:border-gray-400'
+                          style={{
+                            backgroundImage: selectedRows.has(itemId)
+                              ? "url(\"data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e\")"
+                              : 'none',
+                            backgroundSize: '100% 100%',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                          }}
                         />
                         <div className='flex-1'>{columns[0].render(item)}</div>
                       </div>

@@ -407,6 +407,45 @@ class DatabaseService:
             logger.error(f"Error deleting questionnaire: {str(e)}")
             raise Exception(f"Database error: {str(e)}")
 
+    async def bulk_delete_questionnaires(self, questionnaire_ids: List[str]) -> Dict[str, Any]:
+        """
+        Bulk delete multiple questionnaires and all their questions
+        
+        Args:
+            questionnaire_ids: List of questionnaire IDs to delete
+            
+        Returns:
+            Dictionary with success count and error details
+        """
+        try:
+            deleted_count = 0
+            errors = []
+            
+            for questionnaire_id in questionnaire_ids:
+                try:
+                    # Delete all questions for this questionnaire
+                    questions_response = self.client.table("questions").delete().eq("questionnaire_id", questionnaire_id).execute()
+                    
+                    # Delete the questionnaire
+                    questionnaire_response = self.client.table("questionnaires").delete().eq("id", questionnaire_id).execute()
+                    
+                    if len(questionnaire_response.data) > 0:
+                        deleted_count += 1
+                        logger.info(f"Deleted questionnaire {questionnaire_id} and {len(questions_response.data)} questions")
+                    else:
+                        errors.append(f"Questionnaire {questionnaire_id} not found")
+                except Exception as e:
+                    errors.append(f"Error deleting questionnaire {questionnaire_id}: {str(e)}")
+            
+            logger.info(f"Bulk deleted {deleted_count} questionnaires")
+            return {
+                "deleted_count": deleted_count,
+                "errors": errors
+            }
+        except Exception as e:
+            logger.error(f"Error in bulk delete questionnaires: {str(e)}")
+            raise Exception(f"Database error bulk deleting questionnaires: {str(e)}")
+
     async def get_statistics(self) -> Dict[str, Any]:
         """Get database statistics"""
         try:
