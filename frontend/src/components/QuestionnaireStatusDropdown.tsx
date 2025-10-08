@@ -77,7 +77,7 @@ const QuestionnaireStatusDropdown = ({
       </button>
 
       {isOpen && (
-        <div className='absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50 py-1 w-[126px]'>
+        <div className='absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50 py-1 w-[127px]'>
           {statusOptions.map((option) => (
             <button
               key={option.value}
