@@ -190,6 +190,13 @@ const QuestionsTable = ({
           </div>
           <div className='flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity'>
             <button
+              onClick={() => onGenerateAI(question)}
+              className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
+              title='Generate AI answer'
+            >
+              <Sparkles className='w-4 h-4 text-gray-600' />
+            </button>
+            <button
               onClick={() => onEdit(question)}
               className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
               title='Edit answer'
@@ -212,6 +219,13 @@ const QuestionsTable = ({
             </span>
           </div>
           <div className='flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity'>
+            <button
+              onClick={() => onGenerateAI(question)}
+              className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'
+              title='Generate AI answer'
+            >
+              <Sparkles className='w-4 h-4 text-gray-600' />
+            </button>
             <button
               onClick={() => onEdit(question)}
               className='w-[30px] h-[30px] border border-gray-300 rounded bg-white flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer'

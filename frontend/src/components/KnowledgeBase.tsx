@@ -5,18 +5,10 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { BannerActionButton, MultiSelectBanner } from '@/components/MultiSelectBanner';
 import SearchField from '@/components/SearchField';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { UploadDialog } from '@/components/UploadDialog';
 import { api, ApiError } from '@/lib/api';
 import { Policy } from '@/types';
-import { Copy, FileText, Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -32,7 +24,6 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [viewingPolicy, setViewingPolicy] = useState<Policy | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Load policies on component mount
@@ -145,51 +136,6 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
     setSelectedRows(new Set());
   };
 
-  const highlightSearchTerm = (text: string, searchTerm: string) => {
-    if (!searchTerm.trim()) return text;
-
-    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.replace(
-      regex,
-      '<mark class="bg-violet-600/20 dark:bg-violet-600/30 text-violet-600 dark:text-violet-600">$1</mark>',
-    );
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('Content copied to clipboard');
-    } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy content');
-    }
-  };
-
-  const getDisplayText = (policy: Policy) => {
-    if (!policy.extracted_text) return 'No content extracted';
-
-    const text = policy.extracted_text;
-    if (!searchTerm.trim()) return text;
-
-    // If searching, show context around matches
-    const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    const matches = [...text.matchAll(regex)];
-
-    if (matches.length === 0) return text;
-
-    // Show snippets around each match with context
-    const snippets = matches.slice(0, 10).map((match) => {
-      const start = Math.max(0, match.index! - 150);
-      const end = Math.min(text.length, match.index! + match[0].length + 150);
-      const snippet = text.substring(start, end);
-      const prefix = start > 0 ? '...' : '';
-      const suffix = end < text.length ? '...' : '';
-      return prefix + snippet + suffix;
-    });
-
-    return snippets.join('\n\n---\n\n');
-  };
-
   // Filter policies based on search term
   const filteredPolicies = policies.filter((policy) =>
     policy.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -244,89 +190,8 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
           selectedRows={selectedRows}
           onRowSelect={handleRowSelect}
           onSelectAll={handleSelectAll}
-          onView={(policy) => {
-            setViewingPolicy(policy);
-            setSearchTerm('');
-          }}
           onDelete={handleDeletePolicy}
         />
-      )}
-
-      {/* Policy Preview Modal */}
-      {viewingPolicy && (
-        <Dialog open={!!viewingPolicy} onOpenChange={() => setViewingPolicy(null)}>
-          <DialogContent className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
-            <DialogHeader>
-              <DialogTitle className='flex items-center gap-2'>
-                <FileText className='w-5 h-5' />
-                {viewingPolicy?.name}
-              </DialogTitle>
-              <DialogDescription>
-                Extracted content from PDF document ({viewingPolicy?.extracted_text?.length || 0}{' '}
-                characters)
-              </DialogDescription>
-            </DialogHeader>
-
-            {/* Search and actions */}
-            <div className='flex items-center gap-2 py-2'>
-              <div className='relative flex-1'>
-                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4' />
-                <Input
-                  placeholder='Search in content...'
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className='pl-10'
-                />
-              </div>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => copyToClipboard(viewingPolicy?.extracted_text || '')}
-                disabled={!viewingPolicy?.extracted_text}
-                className='border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20 transition-colors'
-              >
-                <Copy className='w-4 h-4 mr-2' />
-                Copy All
-              </Button>
-            </div>
-
-            {/* Content display */}
-            <div className='flex-1 overflow-auto border rounded-md p-4 bg-gray-100'>
-              {viewingPolicy?.extracted_text ? (
-                <div className='whitespace-pre-wrap text-sm font-mono leading-relaxed'>
-                  <div
-                    dangerouslySetInnerHTML={{
-                      __html: highlightSearchTerm(getDisplayText(viewingPolicy), searchTerm),
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className='flex items-center justify-center h-32 text-gray-500'>
-                  <div className='text-center'>
-                    <FileText className='w-8 h-8 mx-auto mb-2 opacity-50' />
-                    <p>No content extracted yet</p>
-                    <p className='text-xs'>Content extraction may still be in progress</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Search results info */}
-            {searchTerm && viewingPolicy?.extracted_text && (
-              <div className='text-xs text-gray-500 pt-2'>
-                {(() => {
-                  const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-                  const matches = [...viewingPolicy.extracted_text.matchAll(regex)];
-                  return matches.length > 0
-                    ? `Found ${matches.length} match${matches.length !== 1 ? 'es' : ''} ${
-                        matches.length > 10 ? '(showing first 10)' : ''
-                      }`
-                    : 'No matches found';
-                })()}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       )}
     </div>
   );

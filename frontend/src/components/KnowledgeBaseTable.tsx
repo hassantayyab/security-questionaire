@@ -1,8 +1,9 @@
 'use client';
 
-import { GenericTable, TableAction, TableColumn } from '@/components/tables';
+import { GenericTable, TableColumn } from '@/components/tables';
+import { Button } from '@/components/ui/button';
 import { Policy } from '@/types';
-import { FileText } from 'lucide-react';
+import { FileText, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 
 interface KnowledgeBaseTableProps {
@@ -10,7 +11,6 @@ interface KnowledgeBaseTableProps {
   selectedRows: Set<string>;
   onRowSelect: (id: string) => void;
   onSelectAll: (selected: boolean) => void;
-  onView: (policy: Policy) => void;
   onDelete: (policy: Policy) => void;
 }
 
@@ -19,7 +19,6 @@ const KnowledgeBaseTable = ({
   selectedRows,
   onRowSelect,
   onSelectAll,
-  onView,
   onDelete,
 }: KnowledgeBaseTableProps) => {
   const formatDate = (dateString: string) => {
@@ -36,8 +35,8 @@ const KnowledgeBaseTable = ({
       header: 'Name',
       render: (policy) => (
         <div className='flex items-center gap-1.5'>
-          <FileText className='w-5 h-5 text-gray-500' />
-          <span className='text-sm font-medium text-gray-900 truncate'>{policy.name}</span>
+          <FileText className='h-5 w-5 text-gray-500' />
+          <span className='truncate text-sm font-medium text-gray-900'>{policy.name}</span>
         </div>
       ),
     },
@@ -52,10 +51,10 @@ const KnowledgeBaseTable = ({
             alt={policy.owner.name}
             width={24}
             height={24}
-            className='w-6 h-6 rounded-full object-cover'
+            className='h-6 w-6 rounded-full object-cover'
           />
         ) : (
-          <div className='w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center'>
+          <div className='flex h-6 w-6 items-center justify-center rounded-full bg-gray-200'>
             <span className='font-medium text-gray-600'>
               {policy.owner?.name?.charAt(0) || '?'}
             </span>
@@ -67,19 +66,29 @@ const KnowledgeBaseTable = ({
       header: 'Upload date',
       width: '120px',
       render: (policy) => (
-        <span className='text-gray-900 whitespace-nowrap'>{formatDate(policy.upload_date)}</span>
+        <span className='whitespace-nowrap text-gray-900'>{formatDate(policy.upload_date)}</span>
       ),
     },
-  ];
-
-  const actions: TableAction<Policy>[] = [
     {
-      label: 'View',
-      onClick: onView,
-    },
-    {
-      label: 'Delete',
-      onClick: onDelete,
+      key: 'actions',
+      header: '',
+      width: '60px',
+      render: (policy) => (
+        <div className='flex justify-end'>
+          <Button
+            variant='outline'
+            size='icon'
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(policy);
+            }}
+            className='h-[30px] w-[30px]'
+            aria-label='Delete resource'
+          >
+            <Trash2 className='h-4 w-4' />
+          </Button>
+        </div>
+      ),
     },
   ];
 
@@ -87,7 +96,6 @@ const KnowledgeBaseTable = ({
     <GenericTable
       data={data}
       columns={columns}
-      actions={actions}
       selectedRows={selectedRows}
       onRowSelect={onRowSelect}
       onSelectAll={onSelectAll}

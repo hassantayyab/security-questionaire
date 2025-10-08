@@ -285,29 +285,42 @@ export default function QuestionnaireDetailPage({ params }: { params: Promise<{ 
   const handleExport = async () => {
     if (!questionnaire) return;
 
+    // Filter questions that have answers (regardless of approval status)
+    const questionsWithAnswers = questions.filter(
+      (q) => q.answer && q.answer.trim() !== '' && q.answer !== null,
+    );
+
+    if (questionsWithAnswers.length === 0) {
+      toast.error('No answers found to export');
+      return;
+    }
+
     try {
-      const response = await api.exportAnswers(questionnaire.id);
+      // Create CSV content from local questions data
+      const csvContent = [
+        ['Question', 'Answer', 'Status'],
+        ...questionsWithAnswers.map((q) => [
+          q.question_text,
+          q.answer || '',
+          q.status || 'unapproved',
+        ]),
+      ]
+        .map((row) => row.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
 
-      if (response.success && response.approved_questions) {
-        const csvContent = [
-          ['Question', 'Answer'],
-          ...response.export_data.map((item: any) => [item.question, item.answer]),
-        ]
-          .map((row) => row.map((cell: any) => `'${cell.replace(/'/g, "''")}'`).join(','))
-          .join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${questionnaire.name}_answers.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
 
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${questionnaire.name}_answers.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        toast.success('Export completed');
-      } else {
-        toast.error('No approved answers found for export');
-      }
+      toast.success(
+        `Exported ${questionsWithAnswers.length} answered question${
+          questionsWithAnswers.length !== 1 ? 's' : ''
+        }`,
+      );
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export answers');
