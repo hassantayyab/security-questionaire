@@ -1,10 +1,10 @@
 'use client';
 
 import { AppLayout, LoadingSpinner } from '@/components';
-import AppButton from '@/components/AppButton';
 import QuestionnairesTable from '@/components/QuestionnairesTable';
 import SearchField from '@/components/SearchField';
 import { ExcelUploadDialog } from '@/components/dialogs';
+import { Button } from '@/components/ui/button';
 import { api, ApiError } from '@/lib/api';
 import { Questionnaire } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -115,9 +115,9 @@ export default function QuestionnairePage() {
               await loadQuestionnaires();
             }}
           >
-            <AppButton variant='primary' size='sm'>
+            <Button variant='default' size='sm'>
               Import questionnaire
-            </AppButton>
+            </Button>
           </ExcelUploadDialog>
         </div>
 

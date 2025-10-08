@@ -2,13 +2,7 @@ import { Navbar } from '@/components';
 import { Toaster } from '@/components/ui/sonner';
 import { appConfig } from '@/config/app';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: appConfig.name,
@@ -20,7 +14,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang='en'>
-      <body className={inter.className}>
+      <head>
+        <link rel='preconnect' href='https://fonts.googleapis.com' />
+        <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='anonymous' />
+        <link
+          href='https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap'
+          rel='stylesheet'
+        />
+      </head>
+      <body>
         <div className='min-h-screen bg-zinc-50 flex flex-col'>
           <Navbar />
           <main className='flex-1 flex'>{children}</main>

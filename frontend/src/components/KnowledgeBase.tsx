@@ -232,10 +232,10 @@ const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCoun
             handleUploadSuccess();
           }}
         >
-          <button className='bg-violet-600 border border-violet-600 text-white px-3 py-[7px] rounded text-xs font-medium hover:bg-violet-700 transition-colors flex items-center gap-1.5 cursor-pointer'>
+          <Button variant='default' size='sm'>
             <Plus className='h-4 w-4' />
             Add resource
-          </button>
+          </Button>
         </UploadDialog>
       </div>
 

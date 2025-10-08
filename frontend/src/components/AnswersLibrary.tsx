@@ -10,6 +10,7 @@ import { Answer } from '@/types';
 import { Import, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Button } from './ui/button';
 
 interface AnswersLibraryProps {
   onCountChange?: (count: number) => void;
@@ -225,13 +226,10 @@ const AnswersLibrary = ({ onCountChange }: AnswersLibraryProps) => {
           </button>
 
           {/* Import Questionnaire Button */}
-          <button
-            onClick={handleImportQuestionnaire}
-            className='bg-violet-600 border border-violet-600 text-white px-3 py-[7px] rounded text-xs font-medium hover:bg-violet-700 transition-colors flex items-center gap-1.5 cursor-pointer'
-          >
+          <Button onClick={handleImportQuestionnaire} variant='default' size='sm'>
             <Import className='h-4 w-4' />
             Import questionnaire
-          </button>
+          </Button>
         </div>
       </div>
 

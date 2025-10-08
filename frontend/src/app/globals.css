@@ -3,12 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --font-sans: 'Inter var', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
 @layer base {
   * {
     @apply border-gray-200 outline-violet-600/50;
   }
   body {
-    @apply bg-white text-gray-900;
+    @apply bg-white text-gray-900 font-sans;
   }
 }
 
