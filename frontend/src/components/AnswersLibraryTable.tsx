@@ -1,6 +1,7 @@
 'use client';
 
 import { GenericTable, TableAction, TableColumn } from '@/components/tables';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import { Answer } from '@/types';
 import { ClipboardList, FileSpreadsheet, User } from 'lucide-react';
 
@@ -35,7 +36,9 @@ const AnswersLibraryTable = ({
       header: 'Question',
       width: '38%',
       render: (answer) => (
-        <span className='text-sm text-gray-900 leading-5 line-clamp-2'>{answer.question}</span>
+        <SimpleTooltip content={answer.question}>
+          <span className='text-sm text-gray-900 leading-5 line-clamp-2'>{answer.question}</span>
+        </SimpleTooltip>
       ),
     },
     {
@@ -43,7 +46,9 @@ const AnswersLibraryTable = ({
       header: 'Answer',
       width: '32%',
       render: (answer) => (
-        <span className='text-sm text-gray-900 leading-5 line-clamp-2'>{answer.answer}</span>
+        <SimpleTooltip content={answer.answer}>
+          <span className='text-sm text-gray-900 leading-5 line-clamp-2'>{answer.answer}</span>
+        </SimpleTooltip>
       ),
     },
     {
@@ -53,15 +58,21 @@ const AnswersLibraryTable = ({
       render: (answer) => {
         // Determine icon based on source
         const isFileImport = answer.source_name?.toLowerCase() === 'file';
-        const Icon = isFileImport
-          ? FileSpreadsheet
-          : answer.source_name?.toLowerCase() === 'user'
-          ? User
-          : ClipboardList;
+        const isUser = answer.source_name?.toLowerCase() === 'user';
+        const Icon = isFileImport ? FileSpreadsheet : isUser ? User : ClipboardList;
+
+        // Determine tooltip content
+        const tooltipContent = isFileImport
+          ? 'Imported from file'
+          : isUser
+          ? 'Added by user'
+          : 'From questionnaire';
 
         return (
           <div className='flex items-center gap-1.5'>
-            <Icon className='w-3.5 h-3.5 text-gray-500' />
+            <SimpleTooltip content={tooltipContent}>
+              <Icon className='w-3.5 h-3.5 text-gray-500' />
+            </SimpleTooltip>
             <span className='text-gray-900 truncate'>{answer.source_name}</span>
           </div>
         );
