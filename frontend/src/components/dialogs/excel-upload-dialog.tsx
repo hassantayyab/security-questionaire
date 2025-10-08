@@ -16,7 +16,6 @@ interface ExcelUploadDialogProps {
 export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDialogProps) => {
   const [open, setOpen] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +41,6 @@ export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDial
         return;
       }
       setUploadedFile(file);
-      setFileName(file.name);
       setError(null);
     }
   };
@@ -57,20 +55,17 @@ export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDial
         return;
       }
       setUploadedFile(files[0]);
-      setFileName(files[0].name);
       setError(null);
     }
   };
 
   const handleDelete = () => {
     setUploadedFile(null);
-    setFileName('');
     setError(null);
   };
 
   const resetForm = () => {
     setUploadedFile(null);
-    setFileName('');
     setError(null);
     setIsUploading(false);
   };
@@ -112,14 +107,6 @@ export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDial
     }
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   return (
     <StandardDialog
       open={open}
@@ -158,7 +145,9 @@ export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDial
                     size='sm'
                     onClick={(e) => {
                       e.stopPropagation();
-                      !isUploading && document.getElementById('excel-file-upload')?.click();
+                      if (!isUploading) {
+                        document.getElementById('excel-file-upload')?.click();
+                      }
                     }}
                     disabled={isUploading}
                     className='hover:bg-white'
@@ -170,7 +159,9 @@ export const ExcelUploadDialog = ({ children, onUploadSuccess }: ExcelUploadDial
                     size='sm'
                     onClick={(e) => {
                       e.stopPropagation();
-                      !isUploading && handleDelete();
+                      if (!isUploading) {
+                        handleDelete();
+                      }
                     }}
                     disabled={isUploading}
                   >

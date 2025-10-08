@@ -50,7 +50,7 @@ const QuestionnairesTable = ({
       key: 'owner',
       header: 'Owner',
       width: '100px',
-      render: (questionnaire) => {
+      render: () => {
         return (
           <div className='flex items-center'>
             <div className='w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center'>

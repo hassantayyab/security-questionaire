@@ -43,8 +43,6 @@ const QuestionnaireStatusDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const currentOption = statusOptions.find((opt) => opt.value === currentStatus);
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
