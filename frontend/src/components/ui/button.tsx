@@ -1,17 +1,18 @@
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { Loader2 } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap font-normal rounded text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-violet-600 focus-visible:ring-violet-700 focus-visible:ring-[3px] aria-invalid:ring-red-500/20 aria-invalid:border-red-500 cursor-pointer shadow-xs",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap font-normal rounded text-sm border border-transparent transition-all disabled:bg-gray-200 disabled:text-gray-700 disabled:border-gray-300 disabled:cursor-default [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-violet-600 focus-visible:ring-violet-700 focus-visible:ring-[3px] aria-invalid:ring-red-500/20 aria-invalid:border-red-500 cursor-pointer shadow-xs",
   {
     variants: {
       variant: {
-        default: 'bg-violet-600 text-white hover:bg-violet-700',
+        default: 'bg-violet-600 text-white hover:bg-violet-700 disabled:bg-gray-200',
         destructive: 'bg-red-500 text-white hover:bg-red-500/90 focus-visible:ring-red-500/20',
-        outline: 'border bg-white hover:bg-gray-100 hover:text-gray-900 border-gray-200',
+        outline: 'border bg-white hover:bg-gray-50 text-gray-700 border-gray-300',
         secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-100/80',
         ghost: 'hover:bg-gray-100 hover:text-gray-900',
         text: 'text-gray-500 hover:text-violet-600 hover:underline shadow-none underline-offset-2',
@@ -31,25 +32,43 @@ const buttonVariants = cva(
   },
 );
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
-  const Comp = asChild ? Slot : 'button';
-
-  return (
-    <Comp
-      data-slot='button'
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
+export interface ButtonProps
+  extends React.ComponentProps<'button'>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  loading?: boolean;
 }
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    { className, variant, size, asChild = false, loading = false, disabled, children, ...props },
+    ref,
+  ) => {
+    const Comp = asChild ? Slot : 'button';
+    const isDisabled = disabled || loading;
+
+    return (
+      <Comp
+        ref={ref}
+        data-slot='button'
+        className={cn(buttonVariants({ variant, size, className }))}
+        disabled={isDisabled}
+        {...props}
+      >
+        {loading && (
+          <Loader2
+            className={cn(
+              'animate-spin',
+              size === 'sm' ? 'size-3' : size === 'lg' ? 'size-5' : 'size-4',
+            )}
+          />
+        )}
+        {children}
+      </Comp>
+    );
+  },
+);
+
+Button.displayName = 'Button';
 
 export { Button, buttonVariants };

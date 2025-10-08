@@ -1,7 +1,7 @@
 'use client';
 
-import AppButton from '@/components/AppButton';
 import { FileCard } from '@/components/FileCard';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -289,11 +289,11 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
 
           {/* Action Buttons */}
           <div className='flex gap-4 items-center justify-end'>
-            <AppButton variant='secondary' onClick={handleCancel} disabled={isUploading}>
+            <Button variant='outline' onClick={handleCancel} disabled={isUploading}>
               Cancel
-            </AppButton>
-            <AppButton
-              variant='primary'
+            </Button>
+            <Button
+              variant='default'
               onClick={handleSave}
               disabled={uploadedFiles.length === 0}
               loading={isUploading}
@@ -301,7 +301,7 @@ export const UploadDialog = ({ children, onUploadSuccess }: UploadDialogProps) =
               {isUploading
                 ? `Uploading...`
                 : `Upload ${uploadedFiles.length > 0 ? `(${uploadedFiles.length})` : ''}`}
-            </AppButton>
+            </Button>
           </div>
         </div>
       </DialogContent>

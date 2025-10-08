@@ -1,7 +1,6 @@
 export { default as AIGenerationProgress } from './AIGenerationProgress';
 export { default as AnswersLibrary } from './AnswersLibrary';
 export { default as AnswersLibraryTable } from './AnswersLibraryTable';
-export { default as AppButton } from './AppButton';
 export { default as AppLayout } from './AppLayout';
 export { default as ApprovalProgress } from './ApprovalProgress';
 export { default as DataTable } from './DataTable';

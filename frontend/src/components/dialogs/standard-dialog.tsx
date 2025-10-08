@@ -87,23 +87,10 @@ export const StandardDialog = ({
         {/* Footer */}
         {!hideFooter && (
           <div className='flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4'>
-            <Button
-              variant='outline'
-              className='h-9 border-gray-300 px-4 text-sm text-gray-700'
-              onClick={onCancel}
-              disabled={actionLoading}
-            >
+            <Button variant='outline' onClick={onCancel} disabled={actionLoading}>
               {cancelLabel}
             </Button>
-            <Button
-              className={`h-9 px-4 text-sm font-medium ${
-                actionDisabled || actionLoading
-                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-200 border border-gray-300'
-                  : 'bg-violet-600 text-white hover:bg-violet-700 border border-violet-600'
-              }`}
-              disabled={actionDisabled || actionLoading}
-              onClick={onAction}
-            >
+            <Button variant='default' disabled={actionDisabled || actionLoading} onClick={onAction}>
               {actionLoading ? 'Loading...' : actionLabel}
             </Button>
           </div>
