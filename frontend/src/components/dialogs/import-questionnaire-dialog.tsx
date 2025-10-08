@@ -441,7 +441,7 @@ export const ImportQuestionnaireDialog = ({
     <StandardDialog
       open={open}
       onOpenChange={handleOpenChange}
-      title='Import Questionnaire'
+      title='Import questionnaire'
       maxWidth='max-w-2xl'
       onCancel={
         canGoBack
