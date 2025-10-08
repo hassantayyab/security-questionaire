@@ -213,7 +213,7 @@ export default function DataTable<T = any>({
 
 // Helper function to create a truncated text cell with tooltip
 export const createTextCell = (maxLines: number = 2, showTooltip: boolean = true) => {
-  return (item: any, value: string) => {
+  const TextCell = (item: any, value: string) => {
     if (!value) return <span className='text-gray-500 italic'>No content</span>;
 
     const cellContent = (
@@ -239,6 +239,8 @@ export const createTextCell = (maxLines: number = 2, showTooltip: boolean = true
       </Tooltip>
     );
   };
+  TextCell.displayName = 'TextCell';
+  return TextCell;
 };
 
 // Helper function to create a badge cell
@@ -252,7 +254,7 @@ export const createBadgeCell = (
     children: ReactNode;
   },
 ) => {
-  return (item: any, value: any) => {
+  const BadgeCell = (item: any, value: any) => {
     const { variant = 'default', className = '', children } = getBadgeProps(item, value);
 
     return (
@@ -271,4 +273,6 @@ export const createBadgeCell = (
       </span>
     );
   };
+  BadgeCell.displayName = 'BadgeCell';
+  return BadgeCell;
 };

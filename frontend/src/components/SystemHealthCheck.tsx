@@ -1,6 +1,5 @@
 'use client';
 
-import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { appConfig } from '@/config/app';
@@ -103,7 +102,27 @@ export const SystemHealthCheck: React.FC = () => {
     <div className='space-y-4'>
       <div className='flex gap-2'>
         <Button onClick={runHealthCheck} disabled={loading} className='flex items-center gap-2'>
-          {loading ? <LoadingSpinner size='sm' /> : <RefreshCw className='h-4 w-4' />}
+          {loading ? (
+            <div className='w-4 h-4'>
+              <svg
+                className='animate-spin'
+                viewBox='0 0 16 16'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+              >
+                <circle cx='8' cy='8' r='6' stroke='currentColor' strokeWidth='2' fill='none' opacity='0.25' />
+                <path
+                  d='M 14 8 A 6 6 0 0 1 8 14'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  fill='none'
+                />
+              </svg>
+            </div>
+          ) : (
+            <RefreshCw className='h-4 w-4' />
+          )}
           Check System Health
         </Button>
 
@@ -113,7 +132,27 @@ export const SystemHealthCheck: React.FC = () => {
           variant='outline'
           className='flex items-center gap-2'
         >
-          {loading ? <LoadingSpinner size='sm' /> : <RefreshCw className='h-4 w-4' />}
+          {loading ? (
+            <div className='w-4 h-4'>
+              <svg
+                className='animate-spin'
+                viewBox='0 0 16 16'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+              >
+                <circle cx='8' cy='8' r='6' stroke='currentColor' strokeWidth='2' fill='none' opacity='0.25' />
+                <path
+                  d='M 14 8 A 6 6 0 0 1 8 14'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  fill='none'
+                />
+              </svg>
+            </div>
+          ) : (
+            <RefreshCw className='h-4 w-4' />
+          )}
           Test AI Service
         </Button>
       </div>

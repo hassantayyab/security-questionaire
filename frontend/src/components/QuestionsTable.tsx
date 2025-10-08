@@ -249,7 +249,7 @@ const QuestionsTable = ({
       key: 'owner',
       header: 'Owner',
       width: '68px',
-      render: (question) => {
+      render: () => {
         // Display owner avatar
         return (
           <div className='flex items-center'>

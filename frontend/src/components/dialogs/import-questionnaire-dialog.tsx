@@ -35,7 +35,6 @@ export const ImportQuestionnaireDialog = ({
     answerColumn: '',
   });
   const [mappedAnswers, setMappedAnswers] = useState<MappedAnswer[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const dropzoneId = useId();
@@ -109,7 +108,6 @@ export const ImportQuestionnaireDialog = ({
   const handleDrop = useCallback(
     async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-      setIsDragging(false);
 
       if (event.dataTransfer.files.length === 0) {
         return;
@@ -123,12 +121,10 @@ export const ImportQuestionnaireDialog = ({
 
   const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setIsDragging(true);
   }, []);
 
   const handleDragLeave = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setIsDragging(false);
   }, []);
 
   const handleRemoveFile = useCallback(() => {

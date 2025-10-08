@@ -31,7 +31,7 @@ const DebugPage: React.FC = () => {
               <h3 className='font-semibold text-gray-900'>AI answers not generating?</h3>
               <ul className='list-disc list-inside text-sm text-gray-700 mt-2 space-y-1'>
                 <li>Check if ANTHROPIC_API_KEY is set in backend/.env</li>
-                <li>Verify the API key is valid by clicking "Test AI Service"</li>
+                <li>Verify the API key is valid by clicking &ldquo;Test AI Service&rdquo;</li>
                 <li>Check backend terminal logs for error messages</li>
                 <li>Ensure policy documents have been uploaded and processed</li>
               </ul>

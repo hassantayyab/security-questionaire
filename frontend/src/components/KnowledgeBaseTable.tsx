@@ -3,6 +3,7 @@
 import { GenericTable, TableAction, TableColumn } from '@/components/tables';
 import { Policy } from '@/types';
 import { FileText } from 'lucide-react';
+import Image from 'next/image';
 
 interface KnowledgeBaseTableProps {
   data: Policy[];
@@ -46,9 +47,11 @@ const KnowledgeBaseTable = ({
       width: '80px',
       render: (policy) =>
         policy.owner?.avatar ? (
-          <img
+          <Image
             src={policy.owner.avatar}
             alt={policy.owner.name}
+            width={24}
+            height={24}
             className='w-6 h-6 rounded-full object-cover'
           />
         ) : (
