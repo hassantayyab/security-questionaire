@@ -44,6 +44,14 @@ Building a security questionnaire application similar to Vanta that automaticall
 - [x] Implement "Questions & Answers" tab UI
 - [x] Add basic navigation and styling
 - [x] Create reusable components (buttons, tables, file uploads)
+- [x] Implement sidebar navigation following Figma design system
+  - [x] Created `SidebarNavigation` component with section support
+  - [x] Created `SidebarNavigationItem` with icons and active states
+  - [x] Created `SidebarNavigationSection` for grouped navigation
+  - [x] Added TypeScript types for navigation structure
+  - [x] Integrated with main page layout
+  - [x] Used lucide-react icons (FolderOpen, HelpCircle)
+  - [x] Applied Secfix Tailwind design system styles
 
 ### Phase 3: Knowledge Base - PDF Upload (Day 2-3)
 
@@ -128,12 +136,14 @@ Building a security questionnaire application similar to Vanta that automaticall
 - [x] Add save/cancel editing actions
 - [x] Create approve/unapprove functionality UI
 - [x] Add bulk approval options
+- [x] Add bulk delete functionality
 
 **Backend:**
 
 - [x] Create endpoints for answer updates (/answers/{id})
 - [x] Create endpoints for status changes (/answers/{id}/approve)
-- [x] Implement bulk operations endpoint
+- [x] Implement bulk operations endpoint (approve/unapprove)
+- [x] Implement bulk delete endpoint (/questions/bulk-delete)
 - [x] Update answer status in database
 - [x] Add validation for answer updates
 
@@ -242,6 +252,24 @@ CREATE TABLE questions (
 );
 ```
 
+### Answers Library Table
+
+```sql
+CREATE TABLE answers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  source_type TEXT NOT NULL CHECK (source_type IN ('user', 'questionnaire')),
+  source_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_answers_created_at ON answers(created_at DESC);
+CREATE INDEX idx_answers_source_type ON answers(source_type);
+```
+
 ## Key Features Breakdown
 
 ### Knowledge Base Tab
@@ -259,6 +287,28 @@ CREATE TABLE questions (
 - Approve/Unapprove buttons
 - Bulk operations
 - Export functionality
+
+### Answers Library
+
+- [x] Create and save question-answer pairs manually
+- [x] Bulk import questions and answers from Excel files (up to 1000 at once)
+- [x] Multi-step Excel import wizard with column selection and preview
+- [x] Import answers from processed questionnaires
+- [x] View saved answers in a searchable table
+- [x] Update and delete answers
+- [x] Track answer source (user or questionnaire)
+- [x] Search and filter functionality
+
+**Excel Import Feature (Completed):**
+
+- Multi-step wizard: Upload → Column Selection → Preview → Import
+- Support for .xlsx and .xls files (max 5MB)
+- Flexible column selection (any column names)
+- Preview first 5 rows before importing
+- Client-side Excel parsing using xlsx library
+- Bulk database insert with validation
+- Success/error reporting
+- See `EXCEL_IMPORT_PLAN.md` and `SAMPLE_QUESTIONNAIRE.md` for details
 
 ## AI Integration Details
 

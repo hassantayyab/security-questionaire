@@ -81,9 +81,9 @@ export default function FileUpload({
       <Card
         {...getRootProps()}
         className={cn(
-          'border-2 border-dashed border-border hover:border-primary/50 transition-colors cursor-pointer',
-          isDragActive && 'border-primary bg-primary/5',
-          error && 'border-destructive',
+          'border-2 border-dashed border-gray-200 hover:border-violet-600/50 transition-colors cursor-pointer',
+          isDragActive && 'border-violet-600 bg-violet-600/5',
+          error && 'border-red-500',
           isUploading && 'pointer-events-none opacity-50',
         )}
       >
@@ -92,15 +92,15 @@ export default function FileUpload({
 
           {isDragActive ? (
             <div className='space-y-2'>
-              <Upload className='w-8 h-8 text-primary mx-auto' />
-              <p className='text-sm font-medium text-primary'>Drop your file here</p>
+              <Upload className='w-8 h-8 text-violet-600 mx-auto' />
+              <p className='text-sm font-medium text-violet-600'>Drop your file here</p>
             </div>
           ) : (
             <div className='space-y-3'>
-              <Upload className='w-8 h-8 text-muted-foreground mx-auto' />
+              <Upload className='w-8 h-8 text-gray-500 mx-auto' />
               <div className='space-y-1'>
                 <p className='text-sm font-medium'>Drop your file here or click to browse</p>
-                <p className='text-xs text-muted-foreground'>
+                <p className='text-xs text-gray-500'>
                   Supported formats: {allowedTypes.join(', ')} • Max size: {maxSize / 1024 / 1024}MB
                 </p>
               </div>
@@ -111,9 +111,9 @@ export default function FileUpload({
 
       {/* Error Message */}
       {error && (
-        <div className='flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg'>
-          <AlertCircle className='w-4 h-4 text-destructive' />
-          <span className='text-sm text-destructive'>{error}</span>
+        <div className='flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-md'>
+          <AlertCircle className='w-4 h-4 text-red-500' />
+          <span className='text-sm text-red-500'>{error}</span>
         </div>
       )}
 
@@ -122,12 +122,12 @@ export default function FileUpload({
         <Card className='p-4'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-3'>
-              <div className='w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center'>
-                <File className='w-5 h-5 text-primary' />
+              <div className='w-10 h-10 bg-violet-600/10 rounded-md flex items-center justify-center'>
+                <File className='w-5 h-5 text-violet-600' />
               </div>
               <div>
                 <p className='text-sm font-medium'>{selectedFile.name}</p>
-                <p className='text-xs text-muted-foreground'>{formatFileSize(selectedFile.size)}</p>
+                <p className='text-xs text-gray-500'>{formatFileSize(selectedFile.size)}</p>
               </div>
             </div>
 
@@ -138,7 +138,12 @@ export default function FileUpload({
                 </Button>
               )}
 
-              <Button onClick={handleUpload} disabled={isUploading} size='sm' className='gap-2'>
+              <Button
+                onClick={handleUpload}
+                disabled={isUploading}
+                size='sm'
+                className='gap-2 bg-violet-600 text-white hover:bg-violet-600/90 focus:ring-violet-600/20'
+              >
                 {isUploading ? (
                   <>
                     <Loader2 className='w-4 h-4 animate-spin' />

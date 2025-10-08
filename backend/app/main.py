@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
-from app.api import health, upload, questionnaires
+from app.api import health, upload, questionnaires, answers
 from app.config.settings import get_settings
 
 # Load environment variables
@@ -36,6 +36,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
 app.include_router(questionnaires.router, prefix="/api/questionnaires", tags=["questionnaires"])
+app.include_router(answers.router, prefix="/api/answers", tags=["answers"])
 
 @app.get("/")
 async def root():

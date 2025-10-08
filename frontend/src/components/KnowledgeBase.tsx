@@ -1,49 +1,37 @@
 'use client';
 
-import FileUpload from '@/components/FileUpload';
-import { Badge } from '@/components/ui/badge';
+import KnowledgeBaseTable from '@/components/KnowledgeBaseTable';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { BannerActionButton, MultiSelectBanner } from '@/components/MultiSelectBanner';
+import SearchField from '@/components/SearchField';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { appConfig } from '@/config/app';
+import { UploadDialog } from '@/components/UploadDialog';
 import { api, ApiError } from '@/lib/api';
-import { Policy, UploadResponse } from '@/types';
-import {
-  AlertCircle,
-  CheckCircle,
-  Copy,
-  Eye,
-  FileText,
-  Loader2,
-  Search,
-  Trash2,
-  Upload,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Policy } from '@/types';
+import { Copy, FileText, Plus, Search } from 'lucide-react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
 
-export default function KnowledgeBase() {
+export interface KnowledgeBaseRef {
+  handleUploadSuccess: () => void;
+}
+
+interface KnowledgeBaseProps {
+  onCountChange?: (count: number) => void;
+}
+
+const KnowledgeBase = forwardRef<KnowledgeBaseRef, KnowledgeBaseProps>(({ onCountChange }, ref) => {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
-  const [, setSelectedPolicy] = useState<Policy | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [viewingPolicy, setViewingPolicy] = useState<Policy | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -51,6 +39,11 @@ export default function KnowledgeBase() {
   useEffect(() => {
     loadPolicies();
   }, []);
+
+  // Notify parent component when policies count changes
+  useEffect(() => {
+    onCountChange?.(policies.length);
+  }, [policies.length, onCountChange]);
 
   const loadPolicies = async () => {
     try {
@@ -72,40 +65,14 @@ export default function KnowledgeBase() {
     }
   };
 
-  const handlePdfUpload = async (file: File) => {
-    if (!file.type.includes('pdf')) {
-      toast.error('Please upload a PDF file');
-      return;
-    }
-
-    if (file.size > appConfig.maxFileSize) {
-      toast.error(`File size must be less than ${appConfig.maxFileSize / 1024 / 1024}MB`);
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const response: UploadResponse = await api.uploadPdf(file);
-
-      if (response.success) {
-        toast.success(response.message);
-
-        // Reload policies from database to ensure consistency
-        await loadPolicies();
-      } else {
-        toast.error(response.message || 'Upload failed');
-      }
-    } catch (error) {
-      console.error('PDF upload error:', error);
-      if (error instanceof ApiError) {
-        toast.error(error.message);
-      } else {
-        toast.error('Failed to upload PDF. Please try again.');
-      }
-    } finally {
-      setIsUploading(false);
-    }
+  const handleUploadSuccess = async () => {
+    // Reload policies from database to ensure consistency
+    await loadPolicies();
   };
+
+  useImperativeHandle(ref, () => ({
+    handleUploadSuccess,
+  }));
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -123,6 +90,24 @@ export default function KnowledgeBase() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleRowSelect = (id: string) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedRows(new Set(filteredPolicies.map((p) => p.id)));
+    } else {
+      setSelectedRows(new Set());
+    }
   };
 
   const handleDeletePolicy = async (policy: Policy) => {
@@ -152,11 +137,56 @@ export default function KnowledgeBase() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const selectedCount = selectedRows.size;
+
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedCount} resource${
+          selectedCount !== 1 ? 's' : ''
+        }? This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const policyIds = Array.from(selectedRows);
+      const response = await api.bulkDeletePolicies(policyIds);
+
+      if (response.success) {
+        // Reload policies from database
+        await loadPolicies();
+        // Clear selection
+        setSelectedRows(new Set());
+        toast.success(response.message);
+
+        if (response.errors && response.errors.length > 0) {
+          toast.warning(`Some resources could not be deleted`);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting policies:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to delete resources. Please try again.');
+      }
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedRows(new Set());
+  };
+
   const highlightSearchTerm = (text: string, searchTerm: string) => {
     if (!searchTerm.trim()) return text;
 
     const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-900">$1</mark>');
+    return text.replace(
+      regex,
+      '<mark class="bg-violet-600/20 dark:bg-violet-600/30 text-violet-600 dark:text-violet-600">$1</mark>',
+    );
   };
 
   const copyToClipboard = async (text: string) => {
@@ -194,230 +224,148 @@ export default function KnowledgeBase() {
     return snippets.join('\n\n---\n\n');
   };
 
+  // Filter policies based on search term
+  const filteredPolicies = policies.filter((policy) =>
+    policy.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
   return (
-    <div className='space-y-6'>
-      {/* Upload Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Upload className='w-5 h-5' />
-            Upload Policy Documents
-          </CardTitle>
-          <CardDescription>Upload PDF files containing your security policies.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FileUpload
-            accept='.pdf'
-            maxSize={appConfig.maxFileSize}
-            onUpload={handlePdfUpload}
-            isUploading={isUploading}
-            allowedTypes={appConfig.allowedFileTypes.pdf}
-          />
-          {isUploading && (
-            <div className='mt-4 space-y-2'>
-              <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                <Loader2 className='w-4 h-4 animate-spin' />
-                Processing PDF with PyPDF2...
-              </div>
-              <Progress value={undefined} className='w-full' />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <div className='space-y-4'>
+      {/* Multi-Select Banner */}
+      <MultiSelectBanner
+        selectedCount={selectedRows.size}
+        itemType='resource'
+        onClose={handleClearSelection}
+      >
+        <BannerActionButton onClick={handleBulkDelete}>Delete</BannerActionButton>
+      </MultiSelectBanner>
+
+      {/* Search and Upload Section */}
+      <div className='flex items-center justify-between w-full pt-4'>
+        <div className='w-64'>
+          <SearchField placeholder='Search' value={searchTerm} onChange={setSearchTerm} />
+        </div>
+        <UploadDialog
+          onUploadSuccess={() => {
+            handleUploadSuccess();
+          }}
+        >
+          <button className='bg-violet-600 border border-violet-600 text-white px-3 py-[7px] rounded text-xs font-medium hover:bg-violet-700 transition-colors flex items-center gap-1.5 cursor-pointer'>
+            <Plus className='h-4 w-4' />
+            Add resource
+          </button>
+        </UploadDialog>
+      </div>
 
       {/* Policies List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <FileText className='w-5 h-5' />
-            Uploaded Policies
-            {policies.length > 0 && (
-              <Badge variant='secondary' className='ml-2'>
-                {policies.length}
-              </Badge>
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : policies.length === 0 ? (
+        <div className='text-center py-8 space-y-3'>
+          <div className='text-base font-medium text-gray-500'>No resources added</div>
+          <div className='text-sm text-gray-500'>Upload your first document to get started</div>
+        </div>
+      ) : filteredPolicies.length === 0 ? (
+        <div className='text-center py-8 space-y-3'>
+          <div className='text-base font-medium text-gray-500'>No documents match your search</div>
+          <div className='text-sm text-gray-500'>
+            Try adjusting your search term or clear the search to see all documents
+          </div>
+        </div>
+      ) : (
+        <KnowledgeBaseTable
+          data={filteredPolicies}
+          selectedRows={selectedRows}
+          onRowSelect={handleRowSelect}
+          onSelectAll={handleSelectAll}
+          onView={(policy) => {
+            setViewingPolicy(policy);
+            setSearchTerm('');
+          }}
+          onDelete={handleDeletePolicy}
+        />
+      )}
+
+      {/* Policy Preview Modal */}
+      {viewingPolicy && (
+        <Dialog open={!!viewingPolicy} onOpenChange={() => setViewingPolicy(null)}>
+          <DialogContent className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
+            <DialogHeader>
+              <DialogTitle className='flex items-center gap-2'>
+                <FileText className='w-5 h-5' />
+                {viewingPolicy?.name}
+              </DialogTitle>
+              <DialogDescription>
+                Extracted content from PDF document ({viewingPolicy?.extracted_text?.length || 0}{' '}
+                characters)
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Search and actions */}
+            <div className='flex items-center gap-2 py-2'>
+              <div className='relative flex-1'>
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4' />
+                <Input
+                  placeholder='Search in content...'
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className='pl-10'
+                />
+              </div>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => copyToClipboard(viewingPolicy?.extracted_text || '')}
+                disabled={!viewingPolicy?.extracted_text}
+                className='border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white focus:ring-violet-600/20 transition-colors'
+              >
+                <Copy className='w-4 h-4 mr-2' />
+                Copy All
+              </Button>
+            </div>
+
+            {/* Content display */}
+            <div className='flex-1 overflow-auto border rounded-md p-4 bg-gray-100'>
+              {viewingPolicy?.extracted_text ? (
+                <div className='whitespace-pre-wrap text-sm font-mono leading-relaxed'>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: highlightSearchTerm(getDisplayText(viewingPolicy), searchTerm),
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className='flex items-center justify-center h-32 text-gray-500'>
+                  <div className='text-center'>
+                    <FileText className='w-8 h-8 mx-auto mb-2 opacity-50' />
+                    <p>No content extracted yet</p>
+                    <p className='text-xs'>Content extraction may still be in progress</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Search results info */}
+            {searchTerm && viewingPolicy?.extracted_text && (
+              <div className='text-xs text-gray-500 pt-2'>
+                {(() => {
+                  const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                  const matches = [...viewingPolicy.extracted_text.matchAll(regex)];
+                  return matches.length > 0
+                    ? `Found ${matches.length} match${matches.length !== 1 ? 'es' : ''} ${
+                        matches.length > 10 ? '(showing first 10)' : ''
+                      }`
+                    : 'No matches found';
+                })()}
+              </div>
             )}
-          </CardTitle>
-          <CardDescription>
-            Manage your uploaded policy documents and view extraction status.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className='flex items-center justify-center py-8'>
-              <Loader2 className='w-6 h-6 animate-spin mr-2' />
-              Loading policies...
-            </div>
-          ) : policies.length === 0 ? (
-            <div className='text-center py-8 space-y-3'>
-              <FileText className='w-12 h-12 text-muted-foreground mx-auto' />
-              <div className='text-lg font-medium text-muted-foreground'>
-                No policies uploaded yet
-              </div>
-              <div className='text-sm text-muted-foreground'>
-                Upload your first PDF policy document to get started
-              </div>
-            </div>
-          ) : (
-            <div className='space-y-4'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Policy Name</TableHead>
-                    <TableHead>Upload Date</TableHead>
-                    <TableHead>File Size</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className='text-right'>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {policies.map((policy) => (
-                    <TableRow key={policy.id}>
-                      <TableCell className='font-medium'>
-                        <div className='flex items-center gap-2'>
-                          <FileText className='w-4 h-4 text-muted-foreground' />
-                          {policy.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatDate(policy.upload_date)}</TableCell>
-                      <TableCell>{formatFileSize(policy.file_size)}</TableCell>
-                      <TableCell>
-                        {policy.extracted_text ? (
-                          <Badge variant='default' className='gap-1'>
-                            <CheckCircle className='w-3 h-3' />
-                            Processed
-                          </Badge>
-                        ) : (
-                          <Badge variant='secondary' className='gap-1'>
-                            <AlertCircle className='w-3 h-3' />
-                            Processing
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className='text-right'>
-                        <div className='flex items-center justify-end gap-2'>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant='outline'
-                                size='sm'
-                                onClick={() => {
-                                  setViewingPolicy(policy);
-                                  setSearchTerm('');
-                                }}
-                                disabled={!policy.extracted_text}
-                                title={
-                                  policy.extracted_text
-                                    ? 'View extracted content'
-                                    : 'Content not yet extracted'
-                                }
-                              >
-                                <Eye className='w-4 h-4' />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
-                              <DialogHeader>
-                                <DialogTitle className='flex items-center gap-2'>
-                                  <FileText className='w-5 h-5' />
-                                  {viewingPolicy?.name}
-                                </DialogTitle>
-                                <DialogDescription>
-                                  Extracted content from PDF document (
-                                  {viewingPolicy?.extracted_text?.length || 0} characters)
-                                </DialogDescription>
-                              </DialogHeader>
-
-                              {/* Search and actions */}
-                              <div className='flex items-center gap-2 py-2'>
-                                <div className='relative flex-1'>
-                                  <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4' />
-                                  <Input
-                                    placeholder='Search in content...'
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className='pl-10'
-                                  />
-                                </div>
-                                <Button
-                                  variant='outline'
-                                  size='sm'
-                                  onClick={() =>
-                                    copyToClipboard(viewingPolicy?.extracted_text || '')
-                                  }
-                                  disabled={!viewingPolicy?.extracted_text}
-                                >
-                                  <Copy className='w-4 h-4 mr-2' />
-                                  Copy All
-                                </Button>
-                              </div>
-
-                              {/* Content display */}
-                              <div className='flex-1 overflow-auto border rounded-lg p-4 bg-muted/50'>
-                                {viewingPolicy?.extracted_text ? (
-                                  <div className='whitespace-pre-wrap text-sm font-mono leading-relaxed'>
-                                    <div
-                                      dangerouslySetInnerHTML={{
-                                        __html: highlightSearchTerm(
-                                          getDisplayText(viewingPolicy),
-                                          searchTerm,
-                                        ),
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className='flex items-center justify-center h-32 text-muted-foreground'>
-                                    <div className='text-center'>
-                                      <FileText className='w-8 h-8 mx-auto mb-2 opacity-50' />
-                                      <p>No content extracted yet</p>
-                                      <p className='text-xs'>
-                                        Content extraction may still be in progress
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Search results info */}
-                              {searchTerm && viewingPolicy?.extracted_text && (
-                                <div className='text-xs text-muted-foreground pt-2'>
-                                  {(() => {
-                                    const regex = new RegExp(
-                                      searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-                                      'gi',
-                                    );
-                                    const matches = [
-                                      ...viewingPolicy.extracted_text.matchAll(regex),
-                                    ];
-                                    return matches.length > 0
-                                      ? `Found ${matches.length} match${
-                                          matches.length !== 1 ? 'es' : ''
-                                        } ${matches.length > 10 ? '(showing first 10)' : ''}`
-                                      : 'No matches found';
-                                  })()}
-                                </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='text-destructive hover:text-destructive'
-                            onClick={() => handleDeletePolicy(policy)}
-                          >
-                            <Trash2 className='w-4 h-4' />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Policy Preview Modal would go here */}
-      {/* This would be implemented with a Dialog component */}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
-}
+});
+
+KnowledgeBase.displayName = 'KnowledgeBase';
+
+export default KnowledgeBase;

@@ -7,6 +7,10 @@ export interface Policy {
   upload_date: string;
   created_at: string;
   updated_at: string;
+  owner?: {
+    name: string;
+    avatar?: string;
+  };
 }
 
 export interface Questionnaire {
@@ -17,6 +21,13 @@ export interface Questionnaire {
   created_at: string;
   updated_at: string;
   question_count?: number;
+  approved_count?: number;
+  approved_date?: string | null;
+  status?: 'in_progress' | 'approved' | 'complete';
+  owner?: {
+    name: string;
+    avatar?: string;
+  };
 }
 
 export interface Question {
@@ -28,6 +39,11 @@ export interface Question {
   created_at: string;
   updated_at: string;
   row_number?: number;
+  answer_source?: 'ai' | 'user' | 'copied' | 'not_found' | null;
+  owner?: {
+    name: string;
+    avatar?: string;
+  };
 }
 
 export interface UploadResponse {
@@ -92,3 +108,33 @@ export interface BulkOperationRequest {
   question_ids: string[];
   status: 'approved' | 'unapproved';
 }
+
+export interface Answer {
+  id: string;
+  question: string;
+  answer: string;
+  source_type: 'user' | 'questionnaire';
+  source_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnswerLibraryResponse {
+  success: boolean;
+  answers: Answer[];
+  count: number;
+}
+
+export interface AnswerCreateResponse {
+  success: boolean;
+  message: string;
+  answer: Answer;
+}
+
+export interface AnswerDeleteResponse {
+  success: boolean;
+  message: string;
+  answer_id: string;
+}
+
+export type { NavigationItem, NavigationSection } from './navigation';

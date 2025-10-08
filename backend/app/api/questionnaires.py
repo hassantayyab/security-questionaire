@@ -6,16 +6,22 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from typing import Dict, Any, List
 from pydantic import BaseModel
 import asyncio
+import logging
 
 from app.services.ai_service import AIService
 from app.services.database import DatabaseService
 from app.config.settings import get_settings, Settings
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 class AnswerUpdate(BaseModel):
     answer: str
     status: str = "unapproved"
+    answer_source: str | None = None
+
+class QuestionnaireStatusUpdate(BaseModel):
+    status: str
 
 # Background task for generating answers
 async def generate_answers_background(
@@ -27,7 +33,16 @@ async def generate_answers_background(
     """
     Background task to generate AI answers for all questions in a questionnaire
     """
+    logger.info(f"Starting AI answer generation for questionnaire: {questionnaire_id}")
+    
     try:
+        # Validate API key first
+        if not anthropic_api_key:
+            logger.error("CRITICAL: ANTHROPIC_API_KEY is not set!")
+            logger.error("Please set ANTHROPIC_API_KEY in your .env file")
+            return
+        
+        logger.info("Initializing services...")
         db_service = DatabaseService(
             supabase_url=supabase_url,
             supabase_key=supabase_key
@@ -35,46 +50,74 @@ async def generate_answers_background(
         ai_service = AIService(anthropic_api_key)
         
         # Get questions for the questionnaire
+        logger.info(f"Fetching questions for questionnaire: {questionnaire_id}")
         questions = await db_service.get_questions_by_questionnaire(questionnaire_id)
         
         if not questions:
+            logger.warning(f"No questions found for questionnaire: {questionnaire_id}")
             return
         
+        logger.info(f"Found {len(questions)} questions to process")
+        
         # Get all policy documents text
+        logger.info("Fetching policy documents...")
         policies = await db_service.get_all_policies()
         policy_context = "\n\n".join([p.get("extracted_text", "") for p in policies if p.get("extracted_text")])
         
         if not policy_context:
+            logger.error("No policy context found! Please upload PDF policies first.")
             return
         
+        logger.info(f"Policy context loaded: {len(policy_context)} characters")
+        
         # Generate answers for each question
-        for question in questions:
+        success_count = 0
+        error_count = 0
+        
+        for idx, question in enumerate(questions, 1):
             try:
+                logger.info(f"Processing question {idx}/{len(questions)}: {question['question_text'][:50]}...")
+                
                 answer = await ai_service.generate_answer(
                     question["question_text"], 
                     policy_context
                 )
                 
-                # Update question with generated answer
+                # Update question with generated answer and set answer_source to 'ai'
                 await db_service.update_question_answer(
                     question["id"], 
                     answer, 
-                    status="unapproved"
+                    status="unapproved",
+                    answer_source="ai"
                 )
+                
+                success_count += 1
+                logger.info(f"✓ Successfully generated answer {idx}/{len(questions)}")
                 
                 # Small delay to prevent overwhelming the API
                 await asyncio.sleep(0.5)
                 
             except Exception as e:
-                print(f"Error generating answer for question {question['id']}: {str(e)}")
+                error_count += 1
+                logger.error(f"✗ Error generating answer for question {question['id']}: {str(e)}")
+                logger.error(f"Error type: {type(e).__name__}")
+                logger.error(f"Question text: {question.get('question_text', 'N/A')[:100]}")
                 continue
+        
+        logger.info(f"AI generation completed for questionnaire {questionnaire_id}")
+        logger.info(f"Results: {success_count} successful, {error_count} failed")
                 
     except Exception as e:
-        print(f"Background task error: {str(e)}")
+        logger.error(f"CRITICAL: Background task error: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.exception("Full traceback:")
 
 class BulkApproval(BaseModel):
     question_ids: List[str]
     status: str
+
+class BulkDelete(BaseModel):
+    question_ids: List[str]
 
 @router.get("/")
 async def get_questionnaires(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
@@ -112,6 +155,61 @@ async def get_policies(settings: Settings = Depends(get_settings)) -> Dict[str, 
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching policies: {str(e)}")
+
+
+class BulkDeletePolicies(BaseModel):
+    policy_ids: List[str]
+
+
+@router.delete("/policies/bulk-delete")
+async def bulk_delete_policies(
+    bulk_delete: BulkDeletePolicies,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Bulk delete multiple policies"""
+    try:
+        if not bulk_delete.policy_ids:
+            raise HTTPException(status_code=400, detail="No policy IDs provided")
+        
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        deleted_count = 0
+        errors = []
+        
+        for policy_id in bulk_delete.policy_ids:
+            try:
+                # Check if policy exists
+                policy = await db_service.get_policy_by_id(policy_id)
+                if not policy:
+                    errors.append(f"Policy {policy_id} not found")
+                    continue
+                
+                # Delete the policy
+                success = await db_service.delete_policy(policy_id)
+                if success:
+                    deleted_count += 1
+                else:
+                    errors.append(f"Failed to delete policy {policy_id}")
+            except Exception as e:
+                errors.append(f"Error deleting policy {policy_id}: {str(e)}")
+        
+        return {
+            "success": True,
+            "message": f"Deleted {deleted_count} resource{'s' if deleted_count != 1 else ''}",
+            "deleted_count": deleted_count,
+            "total_requested": len(bulk_delete.policy_ids),
+            "errors": errors
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in bulk delete policies: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error in bulk delete: {str(e)}")
+
 
 @router.delete("/policies/{policy_id}")
 async def delete_policy(
@@ -182,6 +280,52 @@ async def delete_questionnaire(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting questionnaire: {str(e)}")
+
+@router.put("/{questionnaire_id}/status")
+async def update_questionnaire_status(
+    questionnaire_id: str,
+    status_update: QuestionnaireStatusUpdate,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Update the status of a questionnaire"""
+    try:
+        # Validate status
+        valid_statuses = ['in_progress', 'approved', 'complete']
+        if status_update.status not in valid_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+        
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Check if questionnaire exists
+        questionnaires = await db_service.get_all_questionnaires()
+        questionnaire = next((q for q in questionnaires if q["id"] == questionnaire_id), None)
+        
+        if not questionnaire:
+            raise HTTPException(status_code=404, detail="Questionnaire not found")
+        
+        # Update the status
+        success = await db_service.update_questionnaire_status(questionnaire_id, status_update.status)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Questionnaire status updated to {status_update.status}",
+                "questionnaire_id": questionnaire_id,
+                "status": status_update.status
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update questionnaire status")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating questionnaire status: {str(e)}")
 
 @router.get("/{questionnaire_id}/questions")
 async def get_questions(
@@ -271,7 +415,8 @@ async def update_answer(
         await db_service.update_question_answer(
             question_id, 
             answer_update.answer, 
-            answer_update.status
+            answer_update.status,
+            answer_update.answer_source
         )
         
         return {
@@ -338,6 +483,127 @@ async def bulk_approve_answers(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in bulk approval: {str(e)}")
+
+@router.delete("/questions/{question_id}")
+async def delete_question(
+    question_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Delete a single question by ID"""
+    try:
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Check if question exists
+        question = await db_service.get_question_by_id(question_id)
+        if not question:
+            raise HTTPException(status_code=404, detail="Question not found")
+        
+        # Delete the question
+        success = await db_service.delete_question(question_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": "Question deleted successfully",
+                "question_id": question_id
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete question")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting question: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting question: {str(e)}")
+
+@router.delete("/questions/bulk-delete")
+async def bulk_delete_questions(
+    bulk_delete: BulkDelete,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Bulk delete multiple questions"""
+    try:
+        if not bulk_delete.question_ids:
+            raise HTTPException(status_code=400, detail="No question IDs provided")
+        
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        result = await db_service.bulk_delete_questions(bulk_delete.question_ids)
+        
+        return {
+            "success": True,
+            "message": f"Deleted {result['deleted_count']} question{'s' if result['deleted_count'] != 1 else ''}",
+            "deleted_count": result['deleted_count'],
+            "total_requested": len(bulk_delete.question_ids),
+            "errors": result['errors']
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in bulk delete: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error in bulk delete: {str(e)}")
+
+@router.post("/questions/{question_id}/generate-answer")
+async def generate_single_answer(
+    question_id: str,
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """
+    Generate AI answer for a single question using policy documents
+    """
+    try:
+        db_service = DatabaseService(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key
+        )
+        
+        # Get the question by ID
+        question = await db_service.get_question_by_id(question_id)
+        
+        if not question:
+            raise HTTPException(status_code=404, detail="Question not found")
+        
+        # Get all policy documents text
+        policies = await db_service.get_all_policies()
+        policy_context = "\n\n".join([p.get("extracted_text", "") for p in policies if p.get("extracted_text")])
+        
+        if not policy_context:
+            raise HTTPException(status_code=400, detail="No policy documents found. Please upload PDF policies first.")
+        
+        # Initialize AI service and generate answer
+        ai_service = AIService(settings.anthropic_api_key)
+        answer = await ai_service.generate_answer(
+            question["question_text"], 
+            policy_context
+        )
+        
+        # Update question with generated answer and set answer_source to 'ai'
+        await db_service.update_question_answer(
+            question_id, 
+            answer, 
+            status="unapproved",
+            answer_source="ai"
+        )
+        
+        return {
+            "success": True,
+            "message": "Answer generated successfully",
+            "question_id": question_id,
+            "answer": answer
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating single answer: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating answer: {str(e)}")
 
 @router.get("/{questionnaire_id}/export")
 async def export_approved_answers(

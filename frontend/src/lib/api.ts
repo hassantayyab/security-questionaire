@@ -121,6 +121,16 @@ class ApiClient {
     });
   }
 
+  async updateQuestionnaireStatus(
+    questionnaireId: string,
+    status: 'in_progress' | 'approved' | 'complete',
+  ) {
+    return this.request<any>(`/questionnaires/${questionnaireId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
   async getQuestions(questionnaireId: string) {
     return this.request<any>(`/questionnaires/${questionnaireId}/questions`);
   }
@@ -131,10 +141,19 @@ class ApiClient {
     });
   }
 
-  async updateAnswer(questionId: string, answer: string, status: string = 'unapproved') {
+  async updateAnswer(
+    questionId: string,
+    answer: string,
+    status: string = 'unapproved',
+    answerSource?: 'ai' | 'user' | 'copied' | 'not_found',
+  ) {
+    const body: Record<string, string> = { answer, status };
+    if (answerSource) {
+      body.answer_source = answerSource;
+    }
     return this.request<any>(`/questionnaires/questions/${questionId}/answer`, {
       method: 'PUT',
-      body: JSON.stringify({ answer, status }),
+      body: JSON.stringify(body),
     });
   }
 
@@ -151,8 +170,77 @@ class ApiClient {
     });
   }
 
+  async deleteQuestion(questionId: string) {
+    return this.request<any>(`/questionnaires/questions/${questionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async bulkDeleteQuestions(questionIds: string[]) {
+    return this.request<any>('/questionnaires/questions/bulk-delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ question_ids: questionIds }),
+    });
+  }
+
   async exportAnswers(questionnaireId: string) {
     return this.request<any>(`/questionnaires/${questionnaireId}/export`);
+  }
+
+  async generateSingleAnswer(questionId: string) {
+    return this.request<any>(`/questionnaires/questions/${questionId}/generate-answer`, {
+      method: 'POST',
+    });
+  }
+
+  // Answers Library
+  async getAnswers() {
+    return this.request<any>('/answers/');
+  }
+
+  async createAnswer(question: string, answer: string) {
+    return this.request<any>('/answers/', {
+      method: 'POST',
+      body: JSON.stringify({ question, answer }),
+    });
+  }
+
+  async updateAnswerLibrary(answerId: string, question: string, answer: string) {
+    return this.request<any>(`/answers/${answerId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ question, answer }),
+    });
+  }
+
+  async deleteAnswerLibrary(answerId: string) {
+    return this.request<any>(`/answers/${answerId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAnswerById(answerId: string) {
+    return this.request<any>(`/answers/${answerId}`);
+  }
+
+  async bulkImportAnswers(answers: Array<{ question: string; answer: string }>) {
+    return this.request<any>('/answers/bulk-import', {
+      method: 'POST',
+      body: JSON.stringify({ answers }),
+    });
+  }
+
+  async bulkDeleteAnswers(answerIds: string[]) {
+    return this.request<any>('/answers/bulk-delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ answer_ids: answerIds }),
+    });
+  }
+
+  async bulkDeletePolicies(policyIds: string[]) {
+    return this.request<any>('/questionnaires/policies/bulk-delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ policy_ids: policyIds }),
+    });
   }
 }
 

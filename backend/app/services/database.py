@@ -161,16 +161,21 @@ class DatabaseService:
             raise Exception(f"Database error creating questionnaire: {str(e)}")
     
     async def get_all_questionnaires(self) -> List[Dict[str, Any]]:
-        """Get all questionnaires with question counts"""
+        """Get all questionnaires with question counts and approved counts"""
         try:
             # Get questionnaires
             questionnaires_result = self.client.table("questionnaires").select("*").order("created_at", desc=True).execute()
             questionnaires = questionnaires_result.data
             
-            # Get question counts for each questionnaire
+            # Get question counts and approved counts for each questionnaire
             for questionnaire in questionnaires:
+                # Get total question count
                 questions_result = self.client.table("questions").select("id").eq("questionnaire_id", questionnaire["id"]).execute()
                 questionnaire["question_count"] = len(questions_result.data)
+                
+                # Get approved question count
+                approved_result = self.client.table("questions").select("id").eq("questionnaire_id", questionnaire["id"]).eq("status", "approved").execute()
+                questionnaire["approved_count"] = len(approved_result.data)
             
             return questionnaires
         except Exception as e:
@@ -190,6 +195,31 @@ class DatabaseService:
             logger.error(f"Error deleting questionnaire {questionnaire_id}: {str(e)}")
             raise Exception(f"Database error deleting questionnaire: {str(e)}")
     
+    async def update_questionnaire_status(self, questionnaire_id: str, status: str) -> bool:
+        """
+        Update the status of a questionnaire
+        
+        Args:
+            questionnaire_id: ID of the questionnaire to update
+            status: New status (in_progress, approved, complete)
+            
+        Returns:
+            bool: True if update was successful
+        """
+        try:
+            result = self.client.table("questionnaires").update({
+                "status": status,
+                "updated_at": datetime.utcnow().isoformat()
+            }).eq("id", questionnaire_id).execute()
+            
+            if result.data:
+                logger.info(f"Updated questionnaire {questionnaire_id} status to {status}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error updating questionnaire status {questionnaire_id}: {str(e)}")
+            raise Exception(f"Database error updating questionnaire status: {str(e)}")
+    
     # QUESTION OPERATIONS
     
     async def get_questions_by_questionnaire(self, questionnaire_id: str) -> List[Dict[str, Any]]:
@@ -201,8 +231,23 @@ class DatabaseService:
             logger.error(f"Error fetching questions for questionnaire {questionnaire_id}: {str(e)}")
             raise Exception(f"Database error fetching questions: {str(e)}")
     
-    async def update_question_answer(self, question_id: str, answer: str, status: str = "unapproved") -> bool:
-        """Update a question's answer and status"""
+    async def get_question_by_id(self, question_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific question by ID"""
+        try:
+            result = self.client.table("questions").select("*").eq("id", question_id).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            logger.error(f"Error fetching question {question_id}: {str(e)}")
+            raise Exception(f"Database error fetching question: {str(e)}")
+    
+    async def update_question_answer(
+        self, 
+        question_id: str, 
+        answer: str, 
+        status: str = "unapproved",
+        answer_source: Optional[str] = None
+    ) -> bool:
+        """Update a question's answer, status, and optionally answer_source"""
         try:
             update_data = {
                 "answer": answer,
@@ -210,9 +255,35 @@ class DatabaseService:
                 "updated_at": datetime.utcnow().isoformat()
             }
             
+            # Only set answer_source if provided AND the column exists
+            # Note: Run the migration in backend/migrations/add_answer_source_column.sql
+            # to add this column to your database
+            if answer_source:
+                try:
+                    update_data["answer_source"] = answer_source
+                except Exception:
+                    logger.warning("answer_source column may not exist. Run migration: add_answer_source_column.sql")
+            
             result = self.client.table("questions").update(update_data).eq("id", question_id).execute()
             return len(result.data) > 0
         except Exception as e:
+            # Check if error is due to missing answer_source column
+            error_str = str(e).lower()
+            if "answer_source" in error_str or "column" in error_str:
+                logger.warning("answer_source column does not exist. Run migration: add_answer_source_column.sql")
+                # Retry without answer_source
+                try:
+                    update_data_fallback = {
+                        "answer": answer,
+                        "status": status,
+                        "updated_at": datetime.utcnow().isoformat()
+                    }
+                    result = self.client.table("questions").update(update_data_fallback).eq("id", question_id).execute()
+                    return len(result.data) > 0
+                except Exception as fallback_error:
+                    logger.error(f"Error updating question {question_id} (fallback): {str(fallback_error)}")
+                    raise Exception(f"Database error updating question: {str(fallback_error)}")
+            
             logger.error(f"Error updating question {question_id}: {str(e)}")
             raise Exception(f"Database error updating question: {str(e)}")
     
@@ -238,6 +309,48 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Error fetching approved questions for questionnaire {questionnaire_id}: {str(e)}")
             raise Exception(f"Database error fetching approved questions: {str(e)}")
+    
+    async def delete_question(self, question_id: str) -> bool:
+        """Delete a single question by ID"""
+        try:
+            result = self.client.table("questions").delete().eq("id", question_id).execute()
+            return len(result.data) > 0
+        except Exception as e:
+            logger.error(f"Error deleting question {question_id}: {str(e)}")
+            raise Exception(f"Database error deleting question: {str(e)}")
+    
+    async def bulk_delete_questions(self, question_ids: List[str]) -> Dict[str, Any]:
+        """
+        Bulk delete multiple questions
+        
+        Args:
+            question_ids: List of question IDs to delete
+            
+        Returns:
+            Dictionary with success count and error details
+        """
+        try:
+            deleted_count = 0
+            errors = []
+            
+            for question_id in question_ids:
+                try:
+                    result = self.client.table("questions").delete().eq("id", question_id).execute()
+                    if len(result.data) > 0:
+                        deleted_count += 1
+                    else:
+                        errors.append(f"Question {question_id} not found")
+                except Exception as e:
+                    errors.append(f"Error deleting question {question_id}: {str(e)}")
+            
+            logger.info(f"Bulk deleted {deleted_count} questions")
+            return {
+                "deleted_count": deleted_count,
+                "errors": errors
+            }
+        except Exception as e:
+            logger.error(f"Error in bulk delete questions: {str(e)}")
+            raise Exception(f"Database error bulk deleting questions: {str(e)}")
     
     # UTILITY OPERATIONS
     
@@ -312,3 +425,137 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Error getting statistics: {str(e)}")
             return {"error": str(e)}
+    
+    # ANSWER LIBRARY OPERATIONS
+    
+    async def create_answer(self, answer_data: Dict[str, Any]) -> str:
+        """
+        Create a new answer in the library
+        
+        Args:
+            answer_data: Answer information including question and answer text
+            
+        Returns:
+            str: Answer ID
+        """
+        try:
+            answer_record = {
+                "id": str(uuid.uuid4()),
+                "question": answer_data["question"],
+                "answer": answer_data["answer"],
+                "source_type": "user",
+                "source_name": "User",  # TODO: Get from auth when implemented
+                "created_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            result = self.client.table("answers").insert(answer_record).execute()
+            
+            if result.data:
+                answer_id = result.data[0]["id"]
+                logger.info(f"Created answer: {answer_id}")
+                return answer_id
+            else:
+                raise Exception("Failed to create answer record")
+                
+        except Exception as e:
+            logger.error(f"Error creating answer: {str(e)}")
+            raise Exception(f"Database error creating answer: {str(e)}")
+    
+    async def bulk_create_answers(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Bulk create multiple answers
+        
+        Args:
+            answers: List of answer dictionaries with 'question' and 'answer' keys
+            
+        Returns:
+            Dictionary with success count, error count, and created answer IDs
+        """
+        try:
+            if not answers:
+                return {"success_count": 0, "error_count": 0, "created_ids": []}
+            
+            created_ids = []
+            errors = []
+            
+            # Prepare batch insert data
+            insert_data = []
+            for idx, answer in enumerate(answers):
+                try:
+                    # Validate each answer
+                    if not answer.get("question") or not answer.get("answer"):
+                        errors.append(f"Row {idx + 1}: Missing question or answer")
+                        continue
+                    
+                    insert_data.append({
+                        "question": answer["question"],
+                        "answer": answer["answer"],
+                        "source_type": "user",
+                        "source_name": "File",
+                        "created_at": datetime.utcnow().isoformat(),
+                        "updated_at": datetime.utcnow().isoformat()
+                    })
+                except Exception as e:
+                    errors.append(f"Row {idx + 1}: {str(e)}")
+            
+            # Bulk insert if we have valid data
+            if insert_data:
+                result = self.client.table("answers").insert(insert_data).execute()
+                
+                if result.data:
+                    created_ids = [item["id"] for item in result.data]
+                    logger.info(f"Bulk created {len(created_ids)} answers")
+            
+            return {
+                "success_count": len(created_ids),
+                "error_count": len(errors),
+                "created_ids": created_ids,
+                "errors": errors
+            }
+                
+        except Exception as e:
+            logger.error(f"Error bulk creating answers: {str(e)}")
+            raise Exception(f"Database error bulk creating answers: {str(e)}")
+    
+    async def get_all_answers(self) -> List[Dict[str, Any]]:
+        """Get all answers from the library"""
+        try:
+            result = self.client.table("answers").select("*").order("created_at", desc=True).execute()
+            return result.data
+        except Exception as e:
+            logger.error(f"Error fetching answers: {str(e)}")
+            raise Exception(f"Database error fetching answers: {str(e)}")
+    
+    async def get_answer_by_id(self, answer_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific answer by ID"""
+        try:
+            result = self.client.table("answers").select("*").eq("id", answer_id).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            logger.error(f"Error fetching answer {answer_id}: {str(e)}")
+            raise Exception(f"Database error fetching answer: {str(e)}")
+    
+    async def update_answer(self, answer_id: str, answer_data: Dict[str, Any]) -> bool:
+        """Update an answer"""
+        try:
+            update_data = {
+                "question": answer_data["question"],
+                "answer": answer_data["answer"],
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            result = self.client.table("answers").update(update_data).eq("id", answer_id).execute()
+            return len(result.data) > 0
+        except Exception as e:
+            logger.error(f"Error updating answer {answer_id}: {str(e)}")
+            raise Exception(f"Database error updating answer: {str(e)}")
+    
+    async def delete_answer(self, answer_id: str) -> bool:
+        """Delete an answer"""
+        try:
+            result = self.client.table("answers").delete().eq("id", answer_id).execute()
+            return len(result.data) > 0
+        except Exception as e:
+            logger.error(f"Error deleting answer {answer_id}: {str(e)}")
+            raise Exception(f"Database error deleting answer: {str(e)}")
