@@ -16,7 +16,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           icon: '!text-emerald-500',
           content: 'flex items-start flex-1',
           description: 'text-gray-100',
-          title: 'text-gray-100 text-sm font-medium leading-5',
+          title: 'text-gray-100 text-sm font-medium',
         },
       }}
       {...props}
